@@ -24,14 +24,6 @@ def third_normal_form(table: table.Table) -> list[table.Table]:
     '''
     pass
 
-def third_normal_form(table: table.Table) -> list[table.Table]:
-    '''
-    Takes in a table and returns a list of tables
-    These tables store an equivalent amount of data as the inputed table
-    The tables returned will be in third normal forms
-    '''
-    pass
-
 def boyce_codd_normal_form(table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
