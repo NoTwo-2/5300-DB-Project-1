@@ -2,6 +2,8 @@
 
 SQL DB normalization given database tables and functional dependencies
 
+# Assignment Guidelines
+
 ## Objectives (as seen on the Canvas project page)
 
 To develop a program that takes a dataset (relation) and functional dependencies as input, normalizes the relations based on the provided functional dependencies, produces SQL queries to generate the normalized database tables, and optionally determines the highest normal form of the input table.
