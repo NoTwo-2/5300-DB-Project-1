@@ -3,7 +3,7 @@ class Table:
     def __init__(
         self, 
         columns: list[str], 
-        tuples: list[tuple] = []
+        tuples: list[tuple[str]] = []
     ):
         self.columns: list[str] = columns
         
@@ -41,7 +41,6 @@ class Table:
             depend_index = self.columns.index(dependant)
             
             self.funct_depends[determ_index] = depend_index
-            
     
     def check_attribute_if_valid(self, attr: str) -> None:
         if not (attr in self.columns):
@@ -51,5 +50,27 @@ class Table:
         if len(tuple) != len(self.columns):
             raise RuntimeError(f"{tuple} values dont line up with {self.columns}")
         self.tuples.append(tuple)
-        
+    
+    def remove_tuple(self, primary_key: tuple[str]):
+        '''
+        Takes in a tuple of the PK values of the specific tuple to remove.\n
+        Make sure the order of these values match the order of the attributes you entered to set the PK\n
+        To keep it simple, enter these in the order they appear in the table <----!!!!
+        '''
+        tuples_to_search = self.tuples.copy()
+        # TODO make sure that the PK values are entered in the order they appear in the column list (just sort them)
+        if len(primary_key) != len(self.primary_key):
+            raise RuntimeError(f"{primary_key} values dont line up with {self.primary_key}")
+        # For each primary key value
+        for i in range(len(primary_key)):
+            matching_tuples = []
+            pk_index = self.primary_key[i]
+            # For each tuple in the list of tuples
+            for tuple in tuples_to_search:
+                if tuple[pk_index] == primary_key[i]: 
+                    matching_tuples.append(tuple)
+            tuples_to_search = matching_tuples.copy()
+        if len(tuples_to_search) != 1:
+            raise RuntimeError(f"PK {primary_key} does not uniquely describe tuple, returned {tuples_to_search}")
+        self.tuples.remove(tuples_to_search[0])
     
