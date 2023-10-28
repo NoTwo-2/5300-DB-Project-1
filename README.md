@@ -9,6 +9,8 @@ python3
 pip install tabulate
 ```
 
+Multivalued attributes are represented in the CSV file by putting a space between each value
+
 # Assignment Guidelines
 
 ## Objectives (as seen on the Canvas project page)

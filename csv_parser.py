@@ -8,7 +8,6 @@ def parse_csv(csv_file_location: str) -> tuple[list[str], list[tuple]]:
         while csv:
             # Check if line is empty, and stop the loop if it is
             line = csv.readline()
-            print(line)
             if not line:
                 break
             

@@ -5,7 +5,7 @@ class Table:
     def __init__(
         self, 
         columns: list[str], 
-        tuples: 'list[tuple[str]]' = []
+        tuples: 'list[tuple]' = []
     ):
         self.columns: list[str] = columns
         
@@ -17,14 +17,16 @@ class Table:
         self.primary_key: list[int] = []
         self.funct_depends: 'list[tuple[list[int], list[int]]]'= []
         
-    def set_primary_key(self, *attributes: str)-> None:
+    def set_primary_key(self, attributes: list[str])-> None:
         '''
         This takes in one or more attributes and sets self.primary_key to the indexes of them in self.columns\n
         Returns a RuntimeError if any attribute is not found
         '''
         for attribute in attributes:
             self.check_attribute_if_valid(attribute)
-            self.columns.append(self.columns.index(attribute))
+        
+        for attribute in attributes:
+            self.primary_key.append(self.columns.index(attribute))
     
     def set_functional_dependencies(self, *dependencies: tuple[list[str], list[str]]) -> None:
         '''
@@ -37,12 +39,15 @@ class Table:
             determ_list: list[int] = []
             for attr in determinant:
                 self.check_attribute_if_valid(attr)
-                index = self.columns.index(attr)
-                determ_list.append(index)
             dependant = dependency[1]
             depend_list: list[int] = []
             for attr in dependant:
                 self.check_attribute_if_valid(attr)
+            
+            for attr in determinant:
+                index = self.columns.index(attr)
+                determ_list.append(index)
+            for attr in dependant:
                 index = self.columns.index(attr)
                 depend_list.append(index)
             
@@ -50,14 +55,14 @@ class Table:
     
     def check_attribute_if_valid(self, attr: str) -> None:
         if not (attr in self.columns):
-            raise RuntimeError(f"{attr} is not in {self.columns}")
+            raise RuntimeError(f"'{attr}' is not a valid attribute")
     
     def add_tuple(self, tuple: tuple) -> None:
         if len(tuple) != len(self.columns):
             raise RuntimeError(f"{tuple} values dont line up with {self.columns}")
         self.tuples.append(tuple)
     
-    def remove_tuple(self, primary_key: tuple[str]) -> None:
+    def remove_tuple(self, primary_key: tuple) -> None:
         '''
         Takes in a tuple of the PK values of the specific tuple to remove.\n
         Make sure the order of these values match the order of the attributes you entered to set the PK\n
