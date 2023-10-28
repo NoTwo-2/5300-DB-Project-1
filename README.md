@@ -2,6 +2,13 @@
 
 SQL DB normalization given database tables and functional dependencies
 
+# Requirements
+
+```
+python3
+pip install tabulate
+```
+
 # Assignment Guidelines
 
 ## Objectives (as seen on the Canvas project page)
