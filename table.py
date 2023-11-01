@@ -5,11 +5,11 @@ class Table:
     def __init__(
         self, 
         columns: list[str], 
-        tuples: 'list[tuple]' = []
+        tuples: 'list[tuple[str]]' = []
     ):
         self.columns: list[str] = columns
         
-        self.tuples = []
+        self.tuples: 'list[tuple[str]]' = []
         for tuple in tuples:
             self.add_tuple(tuple)
         
@@ -57,10 +57,17 @@ class Table:
         if not (attr in self.columns):
             raise RuntimeError(f"'{attr}' is not a valid attribute")
     
-    def add_tuple(self, tuple: tuple) -> None:
+    def add_tuple(self, tuple: tuple[str]) -> None:
         if len(tuple) != len(self.columns):
             raise RuntimeError(f"{tuple} values dont line up with {self.columns}")
         self.tuples.append(tuple)
+    
+    def add_tuples(self, tuples: list[tuple[str]]) -> None:
+        '''
+        This takes in a list of tuples and adds them to the tuple list
+        '''
+        for tuple in tuples:
+            self.add_tuple(tuple)
     
     def remove_tuple(self, primary_key: tuple) -> None:
         '''
