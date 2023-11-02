@@ -56,7 +56,14 @@ def is_2nf(my_table: table.Table) -> bool:
         if my_table.is_partially_dependant(attr):
             return False
     return True
-            
+
+def convert_index(index: int, old_columns: list[str], new_columns: list[str]) -> int:
+    '''
+    This takes in an index in the old and two columns and outputs the index in the new
+    '''
+    old_col = old_columns[index]
+    new_index = new_columns.index(old_col)
+    return new_index
 
 def second_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
@@ -70,7 +77,6 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
         non_primes.remove(attr)
     
     new_dependancies: 'list[tuple[list[int], list[int]]]' = []
-    
     # For each non-prime attribute, check if its determinant is a proper subset of the primary key
     for attr in non_primes:
         valid_non_prime = not my_table.is_partially_dependant(attr)
@@ -92,14 +98,13 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
         table_funct_depends = [funct_depend]
         table_mvds: list[tuple[int, tuple[int, int]]] = []
         table_columns: list[int] = []
-        
+
         det, dep = funct_depend
-        funct_depend_attributes = det
-        funct_depend_attributes.extend(dep)
-        
+        funct_depend_attributes = det.copy()
+        funct_depend_attributes.extend(dep.copy())
+
         # Add attributes to the new columns
         table_columns.extend(funct_depend_attributes)
-        
         # First, we find if any multivalued functional dependencies described by any attributes in our set of columns
         # And if we do, we add them to mvds
         for attr in table_columns:
@@ -108,28 +113,40 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
                 continue
             new_mvd = (attr, mvd_dependant)
             table_mvds.append(new_mvd)
-        
+
         # Last, we need to find any transitive functional dependencies in our columns, and take them with us
         for det, dep in my_table.funct_depends:
             determinant_in_col = all(attr in table_columns for attr in det)
             if determinant_in_col:
                 new_dependants: list[int] = []
                 for attr in dep:
-                    if not (dep in table_columns):
+                    if not (attr in table_columns):
                         continue
                     new_dependants.append(attr)
+                if len(new_dependants) == 0:
+                    continue
                 new_dependancy = (det, new_dependants)
+                if new_dependancy in table_funct_depends:
+                    continue
                 table_funct_depends.append(new_dependancy)
-        
+
         # Construct the table!
         table_columns.sort()
-        new_columns = [my_table.columns[col] for col in table_columns]
+        new_columns = [my_table.columns[i] for i in table_columns]
         new_table = table.Table(new_columns)
-        new_table.primary_key = funct_depend[0]
-        new_table.funct_depends = table_funct_depends
+        new_pk = [convert_index(i, my_table.columns, new_table.columns) for i in funct_depend[0]]
+        new_table.primary_key = new_pk
+        for det, dep in table_funct_depends:
+            new_det = [convert_index(i, my_table.columns, new_table.columns) for i in det]
+            new_dep = [convert_index(i, my_table.columns, new_table.columns) for i in dep]
+            new_table.funct_depends.append((new_det, new_dep))
+        for det, dep in table_mvds:
+            new_det = convert_index(det, my_table.columns, new_table.columns)
+            new_dep = tuple([convert_index(i, my_table.columns, new_table.columns) for i in dep])
+            new_table.multi_funct_depends.append((new_det, new_dep))
         new_table.multi_funct_depends = table_mvds
         new_tables.append(new_table)
-        
+
         # Having constructed our new tables, we now need to add all the tuples back into them
         new_tuples: list[tuple[str]] = []
         for tup in my_table.tuples:

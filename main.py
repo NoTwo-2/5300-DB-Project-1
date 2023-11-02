@@ -6,11 +6,15 @@ def input_funct_depends(my_table: table.Table) -> None:
     '''
     This will take in a table object, prompt the user for functional dependencies, and add them in the table
     '''
+    print()
+    counter = 0
+    for col in my_table.columns:
+        print(f"{counter}) {col}")
+        counter += 1
+    print("Please input any valid functional dependencies, or hit enter if finished\nFormat: 0, 1 -> 2, 3: ")
     done = False
     while not done:
-        print()
-        print(f"Columns: {my_table.columns}")
-        entry = input("Please input any valid functional dependencies, or hit enter if finished\nFormat: Determinant1, Determinant2 -> Dependant1, Dependant2: ")
+        entry = input(": ")
         if entry.strip() == "":
             return
         if not ("->" in entry):
@@ -24,31 +28,94 @@ def input_funct_depends(my_table: table.Table) -> None:
         spleterminant = determinant.split(",")
         splependant = dependant.split(",")
         
-        streterminant = [attr.strip() for attr in spleterminant]
-        strependant = [attr.strip()for attr in splependant]
+        try:
+            streterminant = [int(attr.strip()) for attr in spleterminant]
+            strependant = [int(attr.strip()) for attr in splependant]
+        except ValueError as err:
+            print(f"Something was wrong with your input: {err}")
+            continue
+        try:
+            for i in streterminant:
+                my_table.columns[i]
+            for i in strependant:
+                my_table.columns[i]
+            my_table.funct_depends.append((streterminant, strependant))
+            print(f"Added {[my_table.columns[i] for i in streterminant]} -> {[my_table.columns[i] for i in strependant]} to list of functional dependencies.")
+        except IndexError as err:
+            print(f"One or more of your attributes entered had an issue: {err}")
+            continue
+        
+    
+def input_mvds(my_table: table.Table) -> None:
+    '''
+    This will take in a table object, prompt the user for multivalue functional dependencies, and add them in the table
+    '''
+    print()
+    counter = 0
+    for col in my_table.columns:
+        print(f"{counter}) {col}")
+        counter += 1
+    print("Please input any valid multivalue functional dependencies, or hit enter if finished\nFormat: Determinant ->-> Dependant1, Dependant2: ")
+    done = False
+    while not done:
+        entry = input(": ")
+        if entry.strip() == "":
+            return
+        if not ("->->" in entry):
+            print("You did not include an '->->'in your definition. Please try again.")
+            continue
+        splentry = entry.split("->->")
+        
+        determinant = splentry[0]
+        dependant = splentry[1]
+        
+        splependant = dependant.split(",")
+        if len(splependant) != 2:
+            print("You may only have two dependants in a MVD. Please try again.")
+            continue
         
         try:
-            my_table.set_functional_dependencies((streterminant, strependant))
-            print(f"Added {entry.strip()} to list of functional dependencies.")
+            numerminant = int(determinant.strip())
+            numendant = [int(attr.strip()) for attr in splependant]
+        except ValueError as err:
+            print(f"Something was wrong with your input: {err}")
+            continue
+        
+        try:
+            my_table.columns[numerminant]
+            for i in numendant:
+                my_table.columns[i]
+            my_table.multi_funct_depends.append((numerminant, numendant))
+            print(f"Added {my_table.columns[numerminant]} ->-> {[my_table.columns[i] for i in numendant]} to list of functional dependencies.")
         except RuntimeError as err:
             print(f"One or more of your attributes entered had an issue: {err}")
+            continue
 
 def input_primary_key(my_table: table.Table) -> None:
     '''
     This will take in a table object, prompt the user for the primary key, and set the primary key in the table
     '''
+    print()
+    candidate_keys = my_table.get_candidate_keys()
+    counter = 0
+    for key in candidate_keys:
+        print(f"{counter}) {[my_table.columns[i] for i in key]}")
+        counter += 1
+    print("Please input a valid primary key\nIf your key has multiple attributes, seperate them with a comma: ")
     done = False
     while not done:
-        print()
-        print(f"Columns: {my_table.columns}")
-        entry = input("Please input a valid primary key\nIf your key has multiple attributes, seperate them with a comma: ")
-        splentry = entry.split(",")
-        
+        entry = input(": ")
         try:
-            my_table.set_primary_key(attributes=[attr.strip() for attr in splentry])
+            nentry = int(entry.strip())
+        except ValueError as err:
+            print(f"Something was wrong with your input: {err}")
+            continue
+            
+        try:
+            my_table.primary_key = candidate_keys[nentry]
             done = True
-        except RuntimeError as err:
-            print(f"One or more of your attributes entered had an issue: {err}")
+        except IndexError as err:
+            print(f"Something was wrong with your input: {err}")
             
 def create_table() -> table.Table:
     '''
@@ -109,33 +176,41 @@ def normalize_to_form(start_table: table.Table, form: int) -> list[table.Table]:
     return table_list
 
 def main():
-    # my_table = create_table()
+    my_table = create_table()
     
-    # input_primary_key(my_table)
-    # input_funct_depends(my_table)
+    input_funct_depends(my_table)
+    input_primary_key(my_table)
+    input_mvds(my_table)
     
-    # normal_form = int(input(
-    #     "Please enter the form you would like to normalize to\n"
-    #     "1) First normal form\n"
-    #     "2) Second normal form\n"
-    #     "3) Third normal form\n"
-    #     "4) Boyce Codd normal form\n"
-    #     "5) Fourth normal form\n"
-    #     "6) Fifth normal form\n"
-    #     "Form: "
-    # ))
+    normal_form = int(input(
+        "Please enter the form you would like to normalize to\n"
+        "1) First normal form\n"
+        "2) Second normal form\n"
+        "3) Third normal form\n"
+        "4) Boyce Codd normal form\n"
+        "5) Fourth normal form\n"
+        "6) Fifth normal form\n"
+        "Form: "
+    ))
     
-    # print("\nOriginal Table:")
-    # my_table.print_table()
-    # my_table.print_primary_key()
-    # my_table.print_functional_dependencies()
+    print("\nOriginal Table:")
+    my_table.print_table()
+    my_table.print_primary_key()
+    my_table.print_functional_dependencies()
+    my_table.print_mvds()
     
-    # my_normalized_tables = normalize_to_form(my_table, normal_form)
+    my_normalized_tables = normalize_to_form(my_table, normal_form)
     
+    for my_table in my_normalized_tables:
+        print()
+        my_table.print_table()
+        my_table.print_primary_key()
+        my_table.print_functional_dependencies()
+        my_table.print_mvds()
     
     # ---------------=================== DEBUG ===================-------------------
     
-    
+def debug():
     csv_cols, csv_rows = csv_parser.parse_csv("example.csv")
     my_table = table.Table(csv_cols, csv_rows)
     
@@ -176,7 +251,9 @@ def main():
     
     for my_table in new_tables:
         my_table.print_table()
+        my_table.print_primary_key()
 
 
 if __name__ == "__main__":
     main()
+    #debug()

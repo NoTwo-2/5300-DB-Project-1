@@ -29,6 +29,11 @@ Here we have a python3 project to take in a CSV file containing a table, primary
 - The corresponding functions in `normalizer.py` are sequentially called and the normalized tables are returned.
 - The normalized tables are outputted.
 
+## User Instructions
+
+- Spaces in the CSV file deliniate a multivalue attribute, avoid using spaces unless you want to represent multiple values in one attribute
+- Make sure your functional dependencies include transitive functional dependencies. For instance, if A->BC and C->D, enter the FD for A like this: A->BCD
+
 # Assignment Guidelines
 
 ## Objectives (as seen on the Canvas project page)
