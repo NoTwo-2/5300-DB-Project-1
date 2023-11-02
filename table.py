@@ -28,6 +28,124 @@ class Table:
         for attribute in attributes:
             self.primary_key.append(self.columns.index(attribute))
     
+    def check_if_superkey(self, key: list[int]) -> bool:
+        '''
+        This takes in a list of integers representing attributes and outputs True if they fully describe the whole table
+        '''
+        # We remove attributes from this list if they are described by some dependant
+        remaining_attributes = list(range(len(self.columns)))
+        
+        # All attributes describe themselves, so we remove any that appear explicitly in the key
+        for attr in key:
+            remaining_attributes.remove(attr)
+        if len(remaining_attributes) == 0:
+            return True
+        
+        # We create a copy of the key so that we can add dependants to it
+        effective_key = key.copy()
+        # We now loop until we empty remaining attributes because they are described by the effective key (return statement)
+        # Or we run out of new functional dependancies to match with (invariant is failed to be set)
+        invariant = True
+        while invariant:
+            invariant = False
+            
+            # Now we go through each dependancy and see if we have a match that hasnt yet occured
+            for det, dep in self.funct_depends:
+                det_in_effective_key = all(attr in effective_key for attr in det)
+                if not det_in_effective_key:
+                    continue
+                dep_in_effective_key = all(attr in effective_key for attr in dep)
+                if dep_in_effective_key:
+                    # Means we already have explored this dependency
+                    continue
+                for attr in dep:
+                    # Remove from remaining attributes
+                    if attr in remaining_attributes:
+                        remaining_attributes.remove(attr)
+                    # Return true if remaining is empty
+                    if len(remaining_attributes) == 0:
+                        return True # <---------------- If we empty remaining attrubutes
+                    # Add to effective key
+                    if not (attr in effective_key):
+                        effective_key.append(attr)
+                invariant = True
+                break
+        # In this case, the invariant is not set 
+        # Meaning we have run out of functional dependencies before we could empty remaining attributes
+        return False
+    
+    def super_key_recursion(self, current_attributes: list[int], super_keys: list[list[int]] = []) -> list[list[int]]:
+        '''
+        Recursive helper function for finding superkeys\n
+        Dont call this outside of the class, itll be weird
+        '''
+        # In this function, we are working from the top down,
+        # Meaning we are starting with an attributes list containing all attributes
+        # And eliminating one at each recursion step, once for each remaining attribute
+        
+        # Stop condition(s)
+        # 1) If we are exploring a duplicate possibility
+        if current_attributes in super_keys:
+            return super_keys
+        # 2) If this recursion is no longer a superkey
+        is_superkey = self.check_if_superkey(current_attributes)
+        #print(f"{[self.columns[i] for i in current_attributes]} is superkey? {is_superkey}") # Debug
+        if not is_superkey:
+            return super_keys
+        
+        # Add the current iteration to the list of super_keys
+        super_keys.append(current_attributes)
+        
+        # Remove one attribute and recur for each attribute removed
+        for attr in current_attributes:
+            new_attributes = current_attributes.copy()
+            new_attributes.remove(attr)
+            #print(f"Testing key: {[self.columns[i] for i in new_attributes]}")
+            
+            self.super_key_recursion(new_attributes, super_keys)
+        return super_keys
+    
+    def get_superkeys(self) -> list[list[int]]:
+        '''
+        This returns a list of integers representing superkeys of the table
+        '''
+        current_columns = list(range(len(self.columns)))
+        supa_keys = self.super_key_recursion(current_columns)
+        return supa_keys
+            
+    def get_candidate_keys(self) -> list[list[int]]:
+        '''
+        This returns a list of lists of integers representing candidate keys of the table
+        '''
+        super_keys = self.get_superkeys()
+        super_keys.sort(key=len)
+        
+        smallest_key = super_keys[0]
+        candidate_len = len(smallest_key)
+        
+        candidate_keys = []
+        for key in super_keys:
+            if len(key) > candidate_len:
+                break
+            candidate_keys.append(key)
+        
+        return candidate_keys
+            
+    def get_primes(self) -> list[int]:
+        '''
+        This returns a list of integers representing the index of attributes that are prime
+        '''
+        # Prime attributes are able to (either themselves or along with other attributes) uniquely describe a tuple
+        # TODO
+        pass
+            
+    def get_non_primes(self) -> list[int]:
+        '''
+        This returns a list of integers representing the index of attributes that are not prime
+        '''
+        # TODO
+        pass
+    
     def set_functional_dependencies(self, *dependencies: tuple[list[str], list[str]]) -> None:
         '''
         This takes in one or more functional dependencies in the form of tuples (a, b) where a -> b.\n 
@@ -52,6 +170,30 @@ class Table:
                 depend_list.append(index)
             
             self.funct_depends.append((determ_list, depend_list))
+            
+    def get_determinants(self, dependant: int) -> list[list[int]]:
+        '''
+        This takes in a dependant (as an int) and outputs the determinants as a list of lists of ints\n
+        Returns empty list if there are no determinants
+        '''
+        determinants = []
+        for det, dep in self.funct_depends:
+            if not (dependant in dep):
+                continue
+            determinants.append(det)
+        
+        return []
+    
+    def get_dependants(self, determinant: list[int]) -> list[int]:
+        '''
+        This takes in a determinant (as a list of ints) and outputs the dependants as a list of ints\n
+        Returns empty list if no dependants are found
+        '''
+        for det, dep in self.funct_depends:
+            if determinant != det:
+                continue
+            return dep
+        
     
     def check_attribute_if_valid(self, attr: str) -> None:
         if not (attr in self.columns):

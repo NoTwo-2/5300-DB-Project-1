@@ -109,28 +109,58 @@ def normalize_to_form(start_table: table.Table, form: int) -> list[table.Table]:
     return table_list
 
 def main():
-    my_table = create_table()
+    # my_table = create_table()
     
-    input_primary_key(my_table)
-    input_funct_depends(my_table)
+    # input_primary_key(my_table)
+    # input_funct_depends(my_table)
     
-    normal_form = int(input(
-        "Please enter the form you would like to normalize to\n"
-        "1) First normal form\n"
-        "2) Second normal form\n"
-        "3) Third normal form\n"
-        "4) Boyce Codd normal form\n"
-        "5) Fourth normal form\n"
-        "6) Fifth normal form\n"
-        "Form: "
-    ))
+    # normal_form = int(input(
+    #     "Please enter the form you would like to normalize to\n"
+    #     "1) First normal form\n"
+    #     "2) Second normal form\n"
+    #     "3) Third normal form\n"
+    #     "4) Boyce Codd normal form\n"
+    #     "5) Fourth normal form\n"
+    #     "6) Fifth normal form\n"
+    #     "Form: "
+    # ))
+    
+    # print("\nOriginal Table:")
+    # my_table.print_table()
+    # my_table.print_primary_key()
+    # my_table.print_functional_dependencies()
+    
+    # my_normalized_tables = normalize_to_form(my_table, normal_form)
+    
+    
+    # ---------------=================== DEBUG ===================-------------------
+    
+    
+    csv_cols, csv_rows = csv_parser.parse_csv("example.csv")
+    my_table = table.Table(csv_cols, csv_rows)
+    
+    my_table.set_primary_key(["StudentID", "Course", "Professor"])
+    my_table.set_functional_dependencies(
+        (["StudentID"], ["FirstName", "LastName"]),
+        (["Course", "Professor"], ["CourseStart", "CourseEnd"]),
+        (["Professor"], ["ProfessorEmail"])
+    )
     
     print("\nOriginal Table:")
     my_table.print_table()
     my_table.print_primary_key()
     my_table.print_functional_dependencies()
     
-    my_normalized_tables = normalize_to_form(my_table, normal_form)
+    super_keys = my_table.get_superkeys()
+    super_keys.sort(key=len)
+    print(f"Super keys: ")
+    for key in super_keys:
+        print([my_table.columns[i] for i in key])
+    candidate_keys = my_table.get_candidate_keys()
+    print(f"Candidate keys:")
+    for key in candidate_keys:
+        print([my_table.columns[i] for i in key])
+    
     
 if __name__ == "__main__":
     main()
