@@ -142,8 +142,9 @@ def main():
     my_table.set_primary_key(["StudentID", "Course", "Professor"])
     my_table.set_functional_dependencies(
         (["StudentID"], ["FirstName", "LastName"]),
-        (["Course", "Professor"], ["CourseStart", "CourseEnd"]),
-        (["Professor"], ["ProfessorEmail"])
+        (["Course", "Professor"], ["CourseStart", "CourseEnd", "BuildingID"]),
+        (["Professor"], ["ProfessorEmail"]),
+        (["BuildingID"], ["BuildingName"])
     )
     
     print("\nOriginal Table:")
@@ -155,7 +156,7 @@ def main():
     super_keys.sort(key=len)
     print(f"Super keys: ")
     for key in super_keys:
-        print([my_table.columns[i] for i in key])
+        print(key)
     candidate_keys = my_table.get_candidate_keys()
     print(f"Candidate keys:")
     for key in candidate_keys:

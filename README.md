@@ -5,11 +5,29 @@ SQL DB normalization given database tables and functional dependencies
 # Requirements
 
 ```
-python3
+python3 // install the latest version plz
 pip install tabulate
 ```
 
 Multivalued attributes are represented in the CSV file by putting a space between each value
+
+# Description
+
+Here we have a python3 project to take in a CSV file containing a table, primary key, and functional dependencies. The program will then ask the user to input the desired normal form to normalize the table to, and the program will output the normalized tables in stdout.
+
+- The `main.py` file handles all user input. It is also used for debugging purposes.
+- The `csv_parser.py` file handles the parsing of the csv file containing the table data.
+- The `table.py` file contains the class definition for the representation of our table. This is how we store and manipulate the table data in the program. There are various getter functions as well for things like a list of super keys, candidate keys, etc.
+- The `normalizer.py` file contains all the helper functions that normalize the table.
+
+## Program Flow
+- `main.py` asks the user for the input data for the table. 
+- `csv_parser.py` is called to parse the csv file. 
+- The table data is then passed into the constructor in `table.py` and a table object is built.
+- `main.py` asks the user for additional data, such as functional dependencies, the primary key, and multivalue functional dependencies. The table object is updated with these values.
+- `main.py` asks the user what normal form they would like to normalize to.
+- The corresponding functions in `normalizer.py` are sequentially called and the normalized tables are returned.
+- The normalized tables are outputted.
 
 # Assignment Guidelines
 
