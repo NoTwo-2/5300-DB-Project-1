@@ -142,15 +142,20 @@ def main():
     my_table.set_primary_key(["StudentID", "Course", "Professor"])
     my_table.set_functional_dependencies(
         (["StudentID"], ["FirstName", "LastName"]),
-        (["Course", "Professor"], ["CourseStart", "CourseEnd", "BuildingID"]),
+        (["Course", "Professor"], ["CourseStart", "CourseEnd", "BuildingID", "BuildingName"]),
         (["Professor"], ["ProfessorEmail"]),
         (["BuildingID"], ["BuildingName"])
+    )
+    my_table.set_multivalue_funct_depends(
+        ("Course", ("Professor", "BuildingID")),
+        ("StudentID", ("Course", "Professor"))
     )
     
     print("\nOriginal Table:")
     my_table.print_table()
     my_table.print_primary_key()
     my_table.print_functional_dependencies()
+    my_table.print_mvds()
     
     super_keys = my_table.get_superkeys()
     super_keys.sort(key=len)
@@ -162,6 +167,16 @@ def main():
     for key in candidate_keys:
         print([my_table.columns[i] for i in key])
     
+    new_tables = normalizer.first_normal_form(my_table)
+    for my_table in new_tables:
+        my_table.print_table()
+        
+    for my_table in new_tables:
+        new_tables = normalizer.second_normal_form(my_table)
     
+    for my_table in new_tables:
+        my_table.print_table()
+
+
 if __name__ == "__main__":
     main()

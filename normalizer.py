@@ -1,17 +1,16 @@
-from table import Table
+import table
 
-def is_1nf(table: Table) -> bool:
+def is_1nf(my_table: table.Table) -> bool:
     '''
     This takes in a table and returns True if it is in 1nf
     '''
-    for tuple in table.tuples:
+    for tuple in my_table.tuples:
         for value in tuple:
             if " " in value:
                 return False
-    
     return True
 
-def first_normal_form(table: Table) -> list[Table]:
+def first_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
     These tables store an equivalent amount of data as the inputed table
@@ -20,13 +19,13 @@ def first_normal_form(table: Table) -> list[Table]:
     Note: tuples with multivalue attributes will have spaces deliniating the different individual values
     '''
     # We know we will only get back one table from 1nf
-    new_table = Table(table.columns)
-    new_table.primary_key = table.primary_key
-    new_table.funct_depends = table.funct_depends
+    new_table = table.Table(my_table.columns)
+    new_table.primary_key = my_table.primary_key
+    new_table.funct_depends = my_table.funct_depends
     
     new_tuples: 'list[tuple]' = []
     
-    for tuple in table.tuples:
+    for tuple in my_table.tuples:
         new_tuples.append(tuple)
         for value in tuple:
             if not (" " in value):
@@ -43,17 +42,106 @@ def first_normal_form(table: Table) -> list[Table]:
     new_table.add_tuples(new_tuples)
     
     return [new_table]
-                
 
-def second_normal_form(table: Table) -> list[Table]:
+def is_2nf(my_table: table.Table) -> bool:
+    '''
+    This takes in a table and returns True if it is in 2nf
+    '''
+    primes = my_table.get_primes()
+    non_primes = list(range(len(my_table.columns)))
+    for attr in primes:
+        non_primes.remove(attr)
+    
+    for attr in non_primes:
+        if my_table.is_partially_dependant(attr):
+            return False
+    return True
+            
+
+def second_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
     These tables store an equivalent amount of data as the inputed table
     The tables returned will be in second normal forms
     '''
-    pass
+    primes = my_table.get_primes()
+    non_primes = list(range(len(my_table.columns)))
+    for attr in primes:
+        non_primes.remove(attr)
+    
+    new_dependancies: 'list[tuple[list[int], list[int]]]' = []
+    
+    # For each non-prime attribute, check if its determinant is a proper subset of the primary key
+    for attr in non_primes:
+        valid_non_prime = not my_table.is_partially_dependant(attr)
+        if valid_non_prime:
+            continue
+        
+        # Find the functional dependency that corresponds with this attribute 
+        # And add it to the list of new dependencies
+        determinant = my_table.get_determinant(attr)
+        dependants = my_table.get_dependants(determinant)
+        new_depend = (determinant, dependants)
+        if not (new_depend in new_dependancies):
+            new_dependancies.append(new_depend)
+    
+    # Now that we have all the dependancies that will be the basis of our new tables,
+    # We need to construct our new tables
+    new_tables: list[table.Table] = []
+    for funct_depend in new_dependancies:
+        table_funct_depends = [funct_depend]
+        table_mvds: list[tuple[int, tuple[int, int]]] = []
+        table_columns: list[int] = []
+        
+        det, dep = funct_depend
+        funct_depend_attributes = det
+        funct_depend_attributes.extend(dep)
+        
+        # Add attributes to the new columns
+        table_columns.extend(funct_depend_attributes)
+        
+        # First, we find if any multivalued functional dependencies described by any attributes in our set of columns
+        # And if we do, we add them to mvds
+        for attr in table_columns:
+            mvd_dependant = my_table.get_mvd_dependants(attr)
+            if len(mvd_dependant) == 0:
+                continue
+            new_mvd = (attr, mvd_dependant)
+            table_mvds.append(new_mvd)
+        
+        # Last, we need to find any transitive functional dependencies in our columns, and take them with us
+        for det, dep in my_table.funct_depends:
+            determinant_in_col = all(attr in table_columns for attr in det)
+            if determinant_in_col:
+                new_dependants: list[int] = []
+                for attr in dep:
+                    if not (dep in table_columns):
+                        continue
+                    new_dependants.append(attr)
+                new_dependancy = (det, new_dependants)
+                table_funct_depends.append(new_dependancy)
+        
+        # Construct the table!
+        table_columns.sort()
+        new_columns = [my_table.columns[col] for col in table_columns]
+        new_table = table.Table(new_columns)
+        new_table.primary_key = funct_depend[0]
+        new_table.funct_depends = table_funct_depends
+        new_table.multi_funct_depends = table_mvds
+        new_tables.append(new_table)
+        
+        # Having constructed our new tables, we now need to add all the tuples back into them
+        new_tuples: list[tuple[str]] = []
+        for tup in my_table.tuples:
+            new_tuple: tuple[str] = tuple([tup[i] for i in table_columns])
+            if not (new_tuple in new_tuples):
+                new_tuples.append(new_tuple)
+        new_table.add_tuples(new_tuples)
 
-def third_normal_form(table: Table) -> list[Table]:
+    return new_tables
+        
+
+def third_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
     These tables store an equivalent amount of data as the inputed table
@@ -61,7 +149,7 @@ def third_normal_form(table: Table) -> list[Table]:
     '''
     pass
 
-def boyce_codd_normal_form(table: Table) -> list[Table]:
+def boyce_codd_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
     These tables store an equivalent amount of data as the inputed table
@@ -69,7 +157,7 @@ def boyce_codd_normal_form(table: Table) -> list[Table]:
     '''
     pass
 
-def forth_normal_form(table: Table) -> list[Table]:
+def forth_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
     These tables store an equivalent amount of data as the inputed table
@@ -77,7 +165,7 @@ def forth_normal_form(table: Table) -> list[Table]:
     '''
     pass
 
-def fifth_normal_form(table: Table) -> list[Table]:
+def fifth_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
     These tables store an equivalent amount of data as the inputed table
