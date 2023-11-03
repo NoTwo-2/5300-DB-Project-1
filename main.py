@@ -11,7 +11,11 @@ def input_funct_depends(my_table: table.Table) -> None:
     for col in my_table.columns:
         print(f"{counter}) {col}")
         counter += 1
-    print("Please input any valid functional dependencies, or hit enter if finished\nFormat: 0, 1 -> 2, 3: ")
+    print(
+        "Please input any valid functional dependencies, or hit enter if finished\n"
+        "Note: if there are any transitive FDs a->b,c and c->d, write them as a->b,c,d and c->d\n"
+        "Format: 0, 1 -> 2, 3"
+    )
     done = False
     while not done:
         entry = input(": ")
@@ -209,23 +213,8 @@ def main():
         my_table.print_mvds()
     
     # ---------------=================== DEBUG ===================-------------------
-    
-def debug():
-    csv_cols, csv_rows = csv_parser.parse_csv("example.csv")
-    my_table = table.Table(csv_cols, csv_rows)
-    
-    my_table.set_primary_key(["StudentID", "Course", "Professor"])
-    my_table.set_functional_dependencies(
-        (["StudentID"], ["FirstName", "LastName"]),
-        (["Course", "Professor"], ["CourseStart", "CourseEnd", "BuildingID", "BuildingName"]),
-        (["Professor"], ["ProfessorEmail"]),
-        (["BuildingID"], ["BuildingName"])
-    )
-    my_table.set_multivalue_funct_depends(
-        ("Course", ("Professor", "BuildingID")),
-        ("StudentID", ("Course", "Professor"))
-    )
-    
+
+def debug_main(my_table: table.Table):
     print("\nOriginal Table:")
     my_table.print_table()
     my_table.print_primary_key()
@@ -243,17 +232,55 @@ def debug():
         print([my_table.columns[i] for i in key])
     
     new_tables = normalizer.first_normal_form(my_table)
+    print("First Normal Form")
     for my_table in new_tables:
         my_table.print_table()
+        my_table.print_functional_dependencies()
+        my_table.print_mvds()
         
     for my_table in new_tables:
         new_tables = normalizer.second_normal_form(my_table)
     
+    print("Second Normal Form")
     for my_table in new_tables:
         my_table.print_table()
         my_table.print_primary_key()
+        my_table.print_functional_dependencies()
+        my_table.print_mvds()
+
+def debug():
+    csv_cols, csv_rows = csv_parser.parse_csv("example.csv")
+    my_table = table.Table(csv_cols, csv_rows)
+    
+    my_table.set_primary_key(["StudentID", "Course", "Professor"])
+    my_table.set_functional_dependencies(
+        (["StudentID"], ["FirstName", "LastName"]),
+        (["Course", "Professor"], ["CourseStart", "CourseEnd", "BuildingID", "BuildingName"]),
+        (["Professor"], ["ProfessorEmail"]),
+        (["BuildingID"], ["BuildingName"])
+    )
+    my_table.set_multivalue_funct_depends(
+        ("Course", ("Professor", "BuildingID")),
+        ("StudentID", ("Course", "Professor"))
+    )
+    
+    debug_main(my_table)
+
+def debug2():
+    csv_cols, csv_rows = csv_parser.parse_csv("example2.csv")
+    my_table = table.Table(csv_cols, csv_rows)
+    
+    my_table.set_primary_key(["Property_id#"])
+    my_table.set_functional_dependencies(
+        (["Property_id#"], ["County_name", "Lot#", "Area", "Price", "Tax_rate"]),
+        (["County_name", "Lot#"], ["Property_id#", "Area", "Price", "Tax_rate"]),
+        (["County_name"], ["Tax_rate"]),
+        (["Area"], ["Price"])
+    )
+    
+    debug_main(my_table)
 
 
 if __name__ == "__main__":
-    main()
-    #debug()
+    #main()
+    debug2()

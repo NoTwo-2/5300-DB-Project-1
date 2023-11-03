@@ -1,5 +1,37 @@
 import table
 
+def construct_table(
+    old_table: table.Table,
+    new_col_indexes: list[int],
+    primary_key: list[int],
+    functional_dependencies: list[tuple[list[int], list[int]]],
+    multivalue_attributes: list[tuple[int, tuple[int, int]]]
+    ) -> table.Table:
+    '''
+    This will take in an old table and other info needed, and construct and return a new one
+    '''
+    # Convert old indexes to new ones and construct the table with rows, the pk, fds, and mvds
+    new_col_indexes.sort()
+    new_columns = [old_table.columns[i] for i in new_col_indexes]
+    new_table = table.Table(new_columns)
+    new_pk = [convert_index(i, old_table.columns, new_table.columns) for i in primary_key]
+    new_table.primary_key = new_pk
+    for det, dep in functional_dependencies:
+        new_det = [convert_index(i, old_table.columns, new_table.columns) for i in det]
+        new_dep = [convert_index(i, old_table.columns, new_table.columns) for i in dep]
+        new_table.funct_depends.append((new_det, new_dep))
+    for det, dep in multivalue_attributes:
+        new_det = convert_index(det, old_table.columns, new_table.columns)
+        new_dep = tuple([convert_index(i, old_table.columns, new_table.columns) for i in dep])
+        new_table.multi_funct_depends.append((new_det, new_dep))
+
+    # Having constructed our new table, we now need to add all the tuples back into it
+    for tup in old_table.tuples:
+        new_tuple: tuple[str] = tuple([tup[i] for i in new_col_indexes])
+        if not (new_tuple in new_table.tuples):
+            new_table.add_tuple(new_tuple)
+    return new_table
+
 def is_1nf(my_table: table.Table) -> bool:
     '''
     This takes in a table and returns True if it is in 1nf
@@ -22,6 +54,7 @@ def first_normal_form(my_table: table.Table) -> list[table.Table]:
     new_table = table.Table(my_table.columns)
     new_table.primary_key = my_table.primary_key
     new_table.funct_depends = my_table.funct_depends
+    new_table.multi_funct_depends = my_table.multi_funct_depends
     
     new_tuples: 'list[tuple]' = []
     
@@ -79,32 +112,47 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
     new_dependancies: 'list[tuple[list[int], list[int]]]' = []
     # For each non-prime attribute, check if its determinant is a proper subset of the primary key
     for attr in non_primes:
+        
         valid_non_prime = not my_table.is_partially_dependant(attr)
         if valid_non_prime:
             continue
-        
+        print(attr)
         # Find the functional dependency that corresponds with this attribute 
         # And add it to the list of new dependencies
-        determinant = my_table.get_determinant(attr)
-        dependants = my_table.get_dependants(determinant)
-        new_depend = (determinant, dependants)
-        if not (new_depend in new_dependancies):
-            new_dependancies.append(new_depend)
+        determinants = my_table.get_determinants(attr)
+        print(determinants)
+        for det in determinants:
+            dependants = my_table.get_dependants(det)
+            new_depend = (det, dependants)
+            print(new_depend)
+            if not (new_depend in new_dependancies):
+                new_dependancies.append(new_depend)
     
     # Now that we have all the dependancies that will be the basis of our new tables,
     # We need to construct our new tables
     new_tables: list[table.Table] = []
+    
+    # Before we add the other tables, we need to make sure we still have a table with our full primary key in it
+    # But if there were no dependancies with the determinant as the primary key, it wont be added to the list 
+    # So, we add it here if thats the case
+    pk_not_in_dependancies = all(my_table.primary_key != funct_depend[0] for funct_depend in new_dependancies)
+    if pk_not_in_dependancies:
+        new_dependancies.append((my_table.primary_key, []))
+    
+    # For each FD in the list, we make a new table with it.
     for funct_depend in new_dependancies:
-        table_funct_depends = [funct_depend]
+        table_funct_depends: list[tuple[list[int], list[int]]] = []
+        if len(funct_depend[1]) != 0:
+            table_funct_depends.append(funct_depend)
         table_mvds: list[tuple[int, tuple[int, int]]] = []
         table_columns: list[int] = []
 
+        # Add attributes from the functional dependency to the new columns
         det, dep = funct_depend
         funct_depend_attributes = det.copy()
         funct_depend_attributes.extend(dep.copy())
-
-        # Add attributes to the new columns
         table_columns.extend(funct_depend_attributes)
+        
         # First, we find if any multivalued functional dependencies described by any attributes in our set of columns
         # And if we do, we add them to mvds
         for attr in table_columns:
@@ -131,29 +179,15 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
                 table_funct_depends.append(new_dependancy)
 
         # Construct the table!
-        table_columns.sort()
-        new_columns = [my_table.columns[i] for i in table_columns]
-        new_table = table.Table(new_columns)
-        new_pk = [convert_index(i, my_table.columns, new_table.columns) for i in funct_depend[0]]
-        new_table.primary_key = new_pk
-        for det, dep in table_funct_depends:
-            new_det = [convert_index(i, my_table.columns, new_table.columns) for i in det]
-            new_dep = [convert_index(i, my_table.columns, new_table.columns) for i in dep]
-            new_table.funct_depends.append((new_det, new_dep))
-        for det, dep in table_mvds:
-            new_det = convert_index(det, my_table.columns, new_table.columns)
-            new_dep = tuple([convert_index(i, my_table.columns, new_table.columns) for i in dep])
-            new_table.multi_funct_depends.append((new_det, new_dep))
-        new_table.multi_funct_depends = table_mvds
+        new_table = construct_table(
+            old_table=my_table, 
+            new_col_indexes=table_columns, 
+            primary_key=funct_depend[0], 
+            functional_dependencies=table_funct_depends,
+            multivalue_attributes=table_mvds
+            )
+        
         new_tables.append(new_table)
-
-        # Having constructed our new tables, we now need to add all the tuples back into them
-        new_tuples: list[tuple[str]] = []
-        for tup in my_table.tuples:
-            new_tuple: tuple[str] = tuple([tup[i] for i in table_columns])
-            if not (new_tuple in new_tuples):
-                new_tuples.append(new_tuple)
-        new_table.add_tuples(new_tuples)
 
     return new_tables
         

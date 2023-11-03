@@ -121,14 +121,18 @@ class Table:
         super_keys = self.get_superkeys()
         super_keys.sort(key=len)
         
-        smallest_key = super_keys[0]
-        candidate_len = len(smallest_key)
+        candidate_keys: list[list[int]] = []
         
-        candidate_keys = []
-        for key in super_keys:
-            if len(key) > candidate_len:
-                break
-            candidate_keys.append(key)
+        for pot_can in super_keys:
+            is_candidate = True
+            for attr in pot_can:
+                temp = pot_can.copy()
+                temp.remove(attr)
+                if temp in super_keys:
+                    is_candidate = False
+                    break
+            if is_candidate:
+                candidate_keys.append(pot_can)
         
         return candidate_keys
             
@@ -168,15 +172,17 @@ class Table:
             
             self.funct_depends.append((determ_list, depend_list))
             
-    def get_determinant(self, dependant: int) -> list[int]:
+    def get_determinants(self, dependant: int) -> list[list[int]]:
         '''
-        This takes in a dependant (as an int) and outputs the determinants as a list of ints\n
+        This takes in a dependant (as an int) and outputs the determinants as a list of lists of ints\n
         Returns empty list if there are no determinants
         '''
+        determinants = []
         for det, dep in self.funct_depends:
             if not (dependant in dep):
                 continue
-            return det
+            determinants.append(det)
+        return determinants
     
     def get_dependants(self, determinant: list[int]) -> list[int]:
         '''
@@ -191,19 +197,20 @@ class Table:
     
     def is_partially_dependant(self, attribute: int) -> bool:
         '''
-        This returns true if the inputted attribute index is partially dependant
+        This returns true if the inputted attribute index is partially dependant on the super key
         '''
         candidate_keys = self.get_candidate_keys()
-        determinant = self.get_determinant(attribute)
+        determinants = self.get_determinants(attribute)
         
         for key in candidate_keys:
-            for attr in determinant:
-                if not attr in key:
-                    continue
-                if determinant != key:
-                    return True
-                else:
-                    break
+            for det in determinants:
+                for attr in det:
+                    if not attr in key:
+                        continue
+                    if det != key:
+                        return True
+                    else:
+                        break
         return False
         
     def set_multivalue_funct_depends(self, *dependencies: tuple[str, tuple[str, str]]) -> None:
@@ -235,7 +242,10 @@ class Table:
         This takes in a determinant (as a list of ints) and outputs the dependants of the mvd as a list of ints\n
         Returns empty list if no dependants are found
         '''
+        print(determinant)
+        print(self.multi_funct_depends)
         for det, dep in self.multi_funct_depends:
+            print(det, dep)
             if determinant != det:
                 continue
             return dep
