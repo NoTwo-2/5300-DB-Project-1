@@ -231,22 +231,35 @@ def debug_main(my_table: table.Table):
     for key in candidate_keys:
         print([my_table.columns[i] for i in key])
     
-    new_tables = normalizer.first_normal_form(my_table)
+    fnf_tables: list[table.Table] = normalizer.first_normal_form(my_table)
     print("\n-----=====First Normal Form=====-----")
-    for my_table in new_tables:
-        my_table.print_table()
-        my_table.print_functional_dependencies()
-        my_table.print_mvds()
-        
-    for my_table in new_tables:
-        new_tables = normalizer.second_normal_form(my_table)
+    print(fnf_tables)
+    for fnf in fnf_tables:
+        fnf.print_table()
+        fnf.print_functional_dependencies()
+        fnf.print_mvds()
+    
+    snf_tables: list[table.Table] = []
+    for fnf in fnf_tables:
+        snf_tables.extend(normalizer.second_normal_form(fnf))
     
     print("\n-----=====Second Normal Form=====-----")
-    for my_table in new_tables:
-        my_table.print_table()
-        my_table.print_primary_key()
-        my_table.print_functional_dependencies()
-        my_table.print_mvds()
+    for snf in snf_tables:
+        snf.print_table()
+        snf.print_primary_key()
+        snf.print_functional_dependencies()
+        snf.print_mvds()
+    
+    tnf_tables: list[table.Table] = []
+    for snf in snf_tables:
+        tnf_tables.extend(normalizer.third_normal_form(snf))
+    
+    print("\n-----=====Third Normal Form=====-----")
+    for tnf in tnf_tables:
+        tnf.print_table()
+        tnf.print_primary_key()
+        tnf.print_functional_dependencies()
+        tnf.print_mvds()
 
 def debug():
     csv_cols, csv_rows = csv_parser.parse_csv("example.csv")
@@ -275,7 +288,7 @@ def debug2():
         (["Property_id#"], ["County_name", "Lot#", "Area", "Price", "Tax_rate"]),
         (["County_name", "Lot#"], ["Property_id#", "Area", "Price", "Tax_rate"]),
         (["County_name"], ["Tax_rate"]),
-        (["Area"], ["Price", "County_name"])
+        (["Area"], ["Price"])
     )
     
     debug_main(my_table)
@@ -297,5 +310,5 @@ def debug3():
 if __name__ == "__main__":
     #main()
     #debug()
-    #debug2()
-    debug3()
+    debug2()
+    #debug3()

@@ -111,7 +111,7 @@ class Table:
         This returns a list of integers representing superkeys of the table
         '''
         current_columns = list(range(len(self.columns)))
-        supa_keys = self.super_key_recursion(current_columns)
+        supa_keys = self.super_key_recursion(current_columns, [])
         return supa_keys
             
     def get_candidate_keys(self) -> list[list[int]]:
@@ -199,21 +199,20 @@ class Table:
         '''
         This will return all partial dependencies in the table
         That is, all dependancies where the dependant is non-prime and partially dependant on any candidate key
+        This should only be run on a table that is in 1nf
         '''
         dependancies: list[tuple[list[int], list[int]]] = []
         # Get all non-primes
         primes = self.get_primes()
-        print(primes)
         candidate_keys = self.get_candidate_keys()
         non_primes = list(range(len(self.columns)))
         for attr in primes:
             non_primes.remove(attr)
             
         # For each non-prime attribute, check if its determinant is a proper subset of the primary key
-        print(non_primes)
+        # TODO this can be done better by searching through FDs instead of non prime attributes? maybe not, but think on it
         for attr in non_primes:
             determinants = self.get_determinants(attr)
-            print(determinants, attr)
             
             #partial_determinant: list[int] = []
             for key in candidate_keys:
@@ -239,23 +238,44 @@ class Table:
                         
         return dependancies
     
-    def is_partially_dependant(self, attribute: int) -> bool:
+    def get_transitive_dependancies(self) -> list[tuple[list[int], list[int]]]:
         '''
-        This returns true if the inputted attribute index is partially dependant on the super key
+        This will return all transitive dependencies in the table\n
+        That is, all dependancies where the dependant is non-prime and transitivley dependant on the primary key\n
+        This should only be run on a table that is in 2nf
         '''
-        candidate_keys = self.get_candidate_keys()
-        determinants = self.get_determinants(attribute)
+        dependancies: list[tuple[list[int], list[int]]] = []
+        # Get all non-primes
+        primes = self.get_primes()
+        non_primes = list(range(len(self.columns)))
+        for attr in primes:
+            non_primes.remove(attr)
         
-        for key in candidate_keys:
-            for det in determinants:
-                for attr in det:
-                    if not attr in key:
-                        continue
-                    if det != key:
-                        return True
-                    else:
-                        break
-        return False
+        # For all non-trivial FDs (explicitly defined FDs), check if the determinant is non-prime
+        # We assume that all non-prime attributes are fully functionally dependant on primary key
+        
+        for det, dep in self.funct_depends:
+            det_is_non_prime = all(attr in non_primes for attr in det)
+            
+            if not det_is_non_prime:
+                continue
+            print(det, dep)
+            # If the determinant is non-prime, we see if its dependants are non-prime as well
+            # If an attribute in the dependants is non-prime, we add it to the list of dependants
+            dependant: list[int] = []
+            for attr in dep:
+                print(primes)
+                print(attr)
+                if not (attr in primes):
+                    dependant.append(attr)
+            if len(dependant) == 0:
+                continue
+            new_depend = (det, dependant)
+            if not (new_depend in dependancies):
+                dependancies.append(new_depend)
+        print(dependancies)
+        return dependancies
+
         
     def set_multivalue_funct_depends(self, *dependencies: tuple[str, tuple[str, str]]) -> None:
         '''

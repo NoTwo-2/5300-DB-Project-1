@@ -2,6 +2,8 @@
 
 SQL DB normalization given database tables and functional dependencies
 
+I APOLOGIZE FOR THE INCONSISTANT SPELLING OF DEPENDENCY/DEPENDANCY THROUGHT THIS PROJECT
+
 # Requirements
 
 ```
