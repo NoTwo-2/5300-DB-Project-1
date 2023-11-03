@@ -275,7 +275,7 @@ def debug2():
         (["Property_id#"], ["County_name", "Lot#", "Area", "Price", "Tax_rate"]),
         (["County_name", "Lot#"], ["Property_id#", "Area", "Price", "Tax_rate"]),
         (["County_name"], ["Tax_rate"]),
-        (["Area"], ["Price"])
+        (["Area"], ["Price", "County_name"])
     )
     
     debug_main(my_table)
@@ -295,7 +295,7 @@ def debug3():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
     #debug()
     #debug2()
-    #debug3()
+    debug3()

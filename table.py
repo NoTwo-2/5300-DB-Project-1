@@ -228,7 +228,12 @@ class Table:
                     # If we get here, the determinant is a proper subset of some candidate key
                     # Add the full dependency to the list of partial_dependencies
                     dependants = self.get_dependants(det)
-                    new_depend = (det, dependants)
+                    dep: list[int] = []
+                    # Check if a dependant is a prime attribute and if it isnt, add it to the list of dependancies to add to the new FD
+                    for attr in dependants:
+                        if not (attr in primes):
+                            dep.append(attr)
+                    new_depend = (det, dep)
                     if not (new_depend in dependancies):
                         dependancies.append(new_depend)
                         
@@ -362,6 +367,8 @@ class Table:
         '''
         This will print a list of functional dependencies
         '''
+        if len(self.funct_depends) == 0:
+            return
         print("Functional Dependancies:")
         for dependancy in self.funct_depends:
             determinant = dependancy[0]
@@ -370,12 +377,14 @@ class Table:
             depenant = dependancy[1]
             depend_str = self.get_columns(depenant)
             
-            print(f"{determ_str} -> {depend_str}")
+            print(f" -  {determ_str} -> {depend_str}")
     
     def print_mvds(self) -> None:
         '''
         This will print a list of multivalue functional dependencies
         '''
+        if len(self.multi_funct_depends) == 0:
+            return
         print("Multivalue Functional Dependancies:")
         for dependancy in self.multi_funct_depends:
             determinant = dependancy[0]
@@ -385,4 +394,4 @@ class Table:
             depend_str = self.get_columns(depenant)
             for attr in depenant:
                 depend_str = self.get_columns([attr])
-                print(f"{determ_str} ->-> {depend_str}")
+                print(f" -  {determ_str} ->-> {depend_str}")
