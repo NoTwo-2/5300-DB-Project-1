@@ -7,6 +7,62 @@ def move_mvds(old_table: table.Table, new_table: table.Table) -> None:
     '''
     pass
 
+def construct_table_from_funct_dep(old_table: table.Table, funct_depend: tuple[list[int], list[int]]) -> table.Table:
+    '''
+    This takes in an old table and a functional dependancy
+    and returns a new table containing all relevant mvds and functional dependencies
+    '''
+    table_funct_depends: list[tuple[list[int], list[int]]] = []
+    if len(funct_depend[1]) != 0:
+        table_funct_depends.append(funct_depend)
+    table_mvds: list[tuple[int, tuple[int, int]]] = []
+    table_columns: list[int] = []
+
+    # Add attributes from the functional dependency to the new columns
+    det, dep = funct_depend
+    funct_depend_attributes = det.copy()
+    funct_depend_attributes.extend(dep.copy())
+    table_columns.extend(funct_depend_attributes)
+    
+    # First, we find if any multivalued functional dependencies with all elements present in the new tables columns
+    # And if we do, we add them to mvds
+    for attr in table_columns:
+        mvd_dependant = old_table.get_mvd_dependants(attr)
+        if len(mvd_dependant) == 0:
+            continue
+        dep_in_col = all(attr in table_columns for attr in mvd_dependant)
+        if not dep_in_col:
+            continue
+        new_mvd = (attr, mvd_dependant)
+        table_mvds.append(new_mvd)
+
+    # Last, we need to find any transitive functional dependencies in our columns, and take them with us
+    for det, dep in old_table.funct_depends:
+        determinant_in_col = all(attr in table_columns for attr in det)
+        if determinant_in_col:
+            new_dependants: list[int] = []
+            for attr in dep:
+                if not (attr in table_columns):
+                    continue
+                new_dependants.append(attr)
+            if len(new_dependants) == 0:
+                continue
+            new_dependancy = (det, new_dependants)
+            if new_dependancy in table_funct_depends:
+                continue
+            table_funct_depends.append(new_dependancy)
+
+    # Construct the table!
+    new_table = construct_table(
+        old_table=old_table, 
+        new_col_indexes=table_columns, 
+        primary_key=funct_depend[0], 
+        functional_dependencies=table_funct_depends,
+        multivalue_attributes=table_mvds
+        )
+    
+    return new_table
+
 def convert_index(index: int, old_columns: list[str], new_columns: list[str]) -> int:
     '''
     This takes in an index in the old and two columns and outputs the index in the new
@@ -124,54 +180,7 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
     new_tables: list[table.Table] = []
     # For each FD in the list, we make a new table with it IF a table with the same columns doesnt already exist
     for funct_depend in new_dependancies:
-        table_funct_depends: list[tuple[list[int], list[int]]] = []
-        if len(funct_depend[1]) != 0:
-            table_funct_depends.append(funct_depend)
-        table_mvds: list[tuple[int, tuple[int, int]]] = []
-        table_columns: list[int] = []
-
-        # Add attributes from the functional dependency to the new columns
-        det, dep = funct_depend
-        funct_depend_attributes = det.copy()
-        funct_depend_attributes.extend(dep.copy())
-        table_columns.extend(funct_depend_attributes)
-        
-        # First, we find if any multivalued functional dependencies with all elements present in the new tables columns
-        # And if we do, we add them to mvds
-        for attr in table_columns:
-            mvd_dependant = my_table.get_mvd_dependants(attr)
-            if len(mvd_dependant) == 0:
-                continue
-            dep_in_col = all(attr in table_columns for attr in mvd_dependant)
-            if not dep_in_col:
-                continue
-            new_mvd = (attr, mvd_dependant)
-            table_mvds.append(new_mvd)
-
-        # Last, we need to find any transitive functional dependencies in our columns, and take them with us
-        for det, dep in my_table.funct_depends:
-            determinant_in_col = all(attr in table_columns for attr in det)
-            if determinant_in_col:
-                new_dependants: list[int] = []
-                for attr in dep:
-                    if not (attr in table_columns):
-                        continue
-                    new_dependants.append(attr)
-                if len(new_dependants) == 0:
-                    continue
-                new_dependancy = (det, new_dependants)
-                if new_dependancy in table_funct_depends:
-                    continue
-                table_funct_depends.append(new_dependancy)
-
-        # Construct the table!
-        new_table = construct_table(
-            old_table=my_table, 
-            new_col_indexes=table_columns, 
-            primary_key=funct_depend[0], 
-            functional_dependencies=table_funct_depends,
-            multivalue_attributes=table_mvds
-            )
+        new_table = construct_table_from_funct_dep(my_table, funct_depend)
         
         new_tables.append(new_table)
 
@@ -204,54 +213,7 @@ def third_normal_form(my_table: table.Table) -> list[table.Table]:
     new_tables: list[table.Table] = []
     # For each FD in the list, we make a new table with it IF a table with the same columns doesnt already exist
     for funct_depend in new_dependancies:
-        table_funct_depends: list[tuple[list[int], list[int]]] = []
-        if len(funct_depend[1]) != 0:
-            table_funct_depends.append(funct_depend)
-        table_mvds: list[tuple[int, tuple[int, int]]] = []
-        table_columns: list[int] = []
-
-        # Add attributes from the functional dependency to the new columns
-        det, dep = funct_depend
-        funct_depend_attributes = det.copy()
-        funct_depend_attributes.extend(dep.copy())
-        table_columns.extend(funct_depend_attributes)
-        
-        # First, we find if any multivalued functional dependencies with all elements present in the new tables columns
-        # And if we do, we add them to mvds
-        for attr in table_columns:
-            mvd_dependant = my_table.get_mvd_dependants(attr)
-            if len(mvd_dependant) == 0:
-                continue
-            dep_in_col = all(attr in table_columns for attr in mvd_dependant)
-            if not dep_in_col:
-                continue
-            new_mvd = (attr, mvd_dependant)
-            table_mvds.append(new_mvd)
-
-        # Last, we need to find any transitive functional dependencies in our columns, and take them with us
-        for det, dep in my_table.funct_depends:
-            determinant_in_col = all(attr in table_columns for attr in det)
-            if determinant_in_col:
-                new_dependants: list[int] = []
-                for attr in dep:
-                    if not (attr in table_columns):
-                        continue
-                    new_dependants.append(attr)
-                if len(new_dependants) == 0:
-                    continue
-                new_dependancy = (det, new_dependants)
-                if new_dependancy in table_funct_depends:
-                    continue
-                table_funct_depends.append(new_dependancy)
-
-        # Construct the table!
-        new_table = construct_table(
-            old_table=my_table, 
-            new_col_indexes=table_columns, 
-            primary_key=funct_depend[0], 
-            functional_dependencies=table_funct_depends,
-            multivalue_attributes=table_mvds
-            )
+        new_table = construct_table_from_funct_dep(my_table, funct_depend)
         
         new_tables.append(new_table)
 
