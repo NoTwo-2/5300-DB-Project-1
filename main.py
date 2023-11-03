@@ -279,9 +279,23 @@ def debug2():
     )
     
     debug_main(my_table)
+    
+def debug3():
+    csv_cols, csv_rows = csv_parser.parse_csv("example3.csv")
+    my_table = table.Table(csv_cols, csv_rows)
+    
+    my_table.set_primary_key(["Ssn", "Pnumber"])
+    my_table.set_functional_dependencies(
+        (["Ssn", "Pnumber"], ["Hours"]),
+        (["Ssn"], ["Ename"]),
+        (["Pnumber"], ["Pname", "Plocation"])
+    )
+    
+    debug_main(my_table)
 
 
 if __name__ == "__main__":
-    #main()
-    debug()
+    main()
+    #debug()
     #debug2()
+    #debug3()

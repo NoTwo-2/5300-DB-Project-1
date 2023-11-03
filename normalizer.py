@@ -1,5 +1,13 @@
 import table
 
+def convert_index(index: int, old_columns: list[str], new_columns: list[str]) -> int:
+    '''
+    This takes in an index in the old and two columns and outputs the index in the new
+    '''
+    old_col = old_columns[index]
+    new_index = new_columns.index(old_col)
+    return new_index
+
 def construct_table(
     old_table: table.Table,
     new_col_indexes: list[int],
@@ -90,53 +98,18 @@ def is_2nf(my_table: table.Table) -> bool:
             return False
     return True
 
-def convert_index(index: int, old_columns: list[str], new_columns: list[str]) -> int:
-    '''
-    This takes in an index in the old and two columns and outputs the index in the new
-    '''
-    old_col = old_columns[index]
-    new_index = new_columns.index(old_col)
-    return new_index
-
 def second_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
     These tables store an equivalent amount of data as the inputed table
     The tables returned will be in second normal forms
     '''
-    primes = my_table.get_primes()
-    candidate_keys = my_table.get_candidate_keys()
-    non_primes = list(range(len(my_table.columns)))
-    for attr in primes:
-        non_primes.remove(attr)
-    
+    # Get the dependancies that will form the basis of our new tables
     new_dependancies: 'list[tuple[list[int], list[int]]]' = my_table.get_partial_dependencies()
     print(new_dependancies)
-    # For each non-prime attribute, check if its determinant is a proper subset of the primary key
-    # for attr in non_primes:
-        
-    #     valid_non_prime = not my_table.is_partially_dependant(attr)
-    #     if valid_non_prime:
-    #         continue
-    #     # Find all functional dependencies that correspond with this attribute 
-    #     # And add it to the list of new dependencies
-    #     determinants = my_table.get_determinants(attr)
-    #     for det in determinants:
-    #         if det in candidate_keys:
-    #             if det != my_table.primary_key:
-    #                 continue
-    #         dependants = my_table.get_dependants(det)
-    #         new_depend = (det, dependants)
-    #         if not (new_depend in new_dependancies):
-    #             new_dependancies.append(new_depend)
-    
-    # Now that we have all the dependancies that will be the basis of our new tables,
-    # We need to construct our new tables
-    new_tables: list[table.Table] = []
     
     # Before we add the other tables, we need to make sure we still have a table with our full primary key in it
-    # But if there were no dependancies with the determinant as the primary key, it wont be added to the list 
-    # So, we add it here if thats the case
+    # So, we add the primary key, and any dependants that arent covered by other tables and add it here
     pk_not_in_dependancies = all(my_table.primary_key != funct_depend[0] for funct_depend in new_dependancies)
     if pk_not_in_dependancies:
         pk_dependant = my_table.get_dependants(my_table.primary_key)
@@ -146,6 +119,9 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
                     pk_dependant.remove(attr)
         new_dependancies.append((my_table.primary_key, pk_dependant))
     
+    # Now that we have all the dependancies that will be the basis of our new tables,
+    # We need to construct our new tables
+    new_tables: list[table.Table] = []
     # For each FD in the list, we make a new table with it IF a table with the same columns doesnt already exist
     for funct_depend in new_dependancies:
         table_funct_depends: list[tuple[list[int], list[int]]] = []
