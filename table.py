@@ -195,6 +195,45 @@ class Table:
             return dep
         return []
     
+    def get_partial_dependencies(self) -> list[tuple[list[int], list[int]]]:
+        '''
+        This will return all partial dependencies in the table
+        That is, all dependancies where the dependant is non-prime and partially dependant on any candidate key
+        '''
+        dependancies: list[tuple[list[int], list[int]]] = []
+        # Get all non-primes
+        primes = self.get_primes()
+        print(primes)
+        candidate_keys = self.get_candidate_keys()
+        non_primes = list(range(len(self.columns)))
+        for attr in primes:
+            non_primes.remove(attr)
+            
+        # For each non-prime attribute, check if its determinant is a proper subset of the primary key
+        print(non_primes)
+        for attr in non_primes:
+            determinants = self.get_determinants(attr)
+            print(determinants, attr)
+            
+            #partial_determinant: list[int] = []
+            for key in candidate_keys:
+                for det in determinants:
+                    det_subset_key = all(attr in key for attr in det)
+                    if not det_subset_key:
+                        continue
+                    det_is_key = det == key
+                    if det_is_key:
+                        continue
+                    
+                    # If we get here, the determinant is a proper subset of some candidate key
+                    # Add the full dependency to the list of partial_dependencies
+                    dependants = self.get_dependants(det)
+                    new_depend = (det, dependants)
+                    if not (new_depend in dependancies):
+                        dependancies.append(new_depend)
+                        
+        return dependancies
+    
     def is_partially_dependant(self, attribute: int) -> bool:
         '''
         This returns true if the inputted attribute index is partially dependant on the super key
@@ -242,10 +281,7 @@ class Table:
         This takes in a determinant (as a list of ints) and outputs the dependants of the mvd as a list of ints\n
         Returns empty list if no dependants are found
         '''
-        print(determinant)
-        print(self.multi_funct_depends)
         for det, dep in self.multi_funct_depends:
-            print(det, dep)
             if determinant != det:
                 continue
             return dep

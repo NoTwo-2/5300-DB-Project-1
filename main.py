@@ -215,7 +215,7 @@ def main():
     # ---------------=================== DEBUG ===================-------------------
 
 def debug_main(my_table: table.Table):
-    print("\nOriginal Table:")
+    print("\n----=====Original Table=====-----")
     my_table.print_table()
     my_table.print_primary_key()
     my_table.print_functional_dependencies()
@@ -232,7 +232,7 @@ def debug_main(my_table: table.Table):
         print([my_table.columns[i] for i in key])
     
     new_tables = normalizer.first_normal_form(my_table)
-    print("First Normal Form")
+    print("\n-----=====First Normal Form=====-----")
     for my_table in new_tables:
         my_table.print_table()
         my_table.print_functional_dependencies()
@@ -241,7 +241,7 @@ def debug_main(my_table: table.Table):
     for my_table in new_tables:
         new_tables = normalizer.second_normal_form(my_table)
     
-    print("Second Normal Form")
+    print("\n-----=====Second Normal Form=====-----")
     for my_table in new_tables:
         my_table.print_table()
         my_table.print_primary_key()
@@ -283,4 +283,5 @@ def debug2():
 
 if __name__ == "__main__":
     #main()
-    debug2()
+    debug()
+    #debug2()

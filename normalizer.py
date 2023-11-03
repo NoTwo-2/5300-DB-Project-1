@@ -105,28 +105,30 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
     The tables returned will be in second normal forms
     '''
     primes = my_table.get_primes()
+    candidate_keys = my_table.get_candidate_keys()
     non_primes = list(range(len(my_table.columns)))
     for attr in primes:
         non_primes.remove(attr)
     
-    new_dependancies: 'list[tuple[list[int], list[int]]]' = []
+    new_dependancies: 'list[tuple[list[int], list[int]]]' = my_table.get_partial_dependencies()
+    print(new_dependancies)
     # For each non-prime attribute, check if its determinant is a proper subset of the primary key
-    for attr in non_primes:
+    # for attr in non_primes:
         
-        valid_non_prime = not my_table.is_partially_dependant(attr)
-        if valid_non_prime:
-            continue
-        print(attr)
-        # Find the functional dependency that corresponds with this attribute 
-        # And add it to the list of new dependencies
-        determinants = my_table.get_determinants(attr)
-        print(determinants)
-        for det in determinants:
-            dependants = my_table.get_dependants(det)
-            new_depend = (det, dependants)
-            print(new_depend)
-            if not (new_depend in new_dependancies):
-                new_dependancies.append(new_depend)
+    #     valid_non_prime = not my_table.is_partially_dependant(attr)
+    #     if valid_non_prime:
+    #         continue
+    #     # Find all functional dependencies that correspond with this attribute 
+    #     # And add it to the list of new dependencies
+    #     determinants = my_table.get_determinants(attr)
+    #     for det in determinants:
+    #         if det in candidate_keys:
+    #             if det != my_table.primary_key:
+    #                 continue
+    #         dependants = my_table.get_dependants(det)
+    #         new_depend = (det, dependants)
+    #         if not (new_depend in new_dependancies):
+    #             new_dependancies.append(new_depend)
     
     # Now that we have all the dependancies that will be the basis of our new tables,
     # We need to construct our new tables
@@ -137,9 +139,14 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
     # So, we add it here if thats the case
     pk_not_in_dependancies = all(my_table.primary_key != funct_depend[0] for funct_depend in new_dependancies)
     if pk_not_in_dependancies:
-        new_dependancies.append((my_table.primary_key, []))
+        pk_dependant = my_table.get_dependants(my_table.primary_key)
+        for attr in pk_dependant:
+            for det, dep in new_dependancies:
+                if attr in dep:
+                    pk_dependant.remove(attr)
+        new_dependancies.append((my_table.primary_key, pk_dependant))
     
-    # For each FD in the list, we make a new table with it.
+    # For each FD in the list, we make a new table with it IF a table with the same columns doesnt already exist
     for funct_depend in new_dependancies:
         table_funct_depends: list[tuple[list[int], list[int]]] = []
         if len(funct_depend[1]) != 0:
@@ -153,11 +160,14 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
         funct_depend_attributes.extend(dep.copy())
         table_columns.extend(funct_depend_attributes)
         
-        # First, we find if any multivalued functional dependencies described by any attributes in our set of columns
+        # First, we find if any multivalued functional dependencies with all elements present in the new tables columns
         # And if we do, we add them to mvds
         for attr in table_columns:
             mvd_dependant = my_table.get_mvd_dependants(attr)
             if len(mvd_dependant) == 0:
+                continue
+            dep_in_col = all(attr in table_columns for attr in mvd_dependant)
+            if not dep_in_col:
                 continue
             new_mvd = (attr, mvd_dependant)
             table_mvds.append(new_mvd)
