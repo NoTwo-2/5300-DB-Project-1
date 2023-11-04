@@ -185,7 +185,14 @@ def second_normal_form(my_table: table.Table) -> list[table.Table]:
         new_tables.append(new_table)
 
     return new_tables
-        
+
+def is_3nf(my_table: table.Table) -> bool:
+    '''
+    This takes in a table and returns True if it is in 3nf
+    '''
+    transitive_dependancies = my_table.get_transitive_dependancies()
+    
+    return len(transitive_dependancies) == 0
 
 def third_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
@@ -193,7 +200,6 @@ def third_normal_form(my_table: table.Table) -> list[table.Table]:
     These tables store an equivalent amount of data as the inputed table
     The tables returned will be in third normal forms
     '''
-    print(my_table.columns)
     new_dependancies: 'list[tuple[list[int], list[int]]]' = my_table.get_transitive_dependancies()
     
     # We need to add the primary key back to the list of new dependancies
@@ -204,9 +210,6 @@ def third_normal_form(my_table: table.Table) -> list[table.Table]:
             if attr in dep:
                 pk_dependant.remove(attr)
     new_dependancies.append((my_table.primary_key, pk_dependant))
-    
-    
-    print(new_dependancies)
     
     # Now that we have all the dependancies that will be the basis of our new tables,
     # We need to construct our new tables

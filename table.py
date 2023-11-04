@@ -259,13 +259,10 @@ class Table:
             
             if not det_is_non_prime:
                 continue
-            print(det, dep)
             # If the determinant is non-prime, we see if its dependants are non-prime as well
             # If an attribute in the dependants is non-prime, we add it to the list of dependants
             dependant: list[int] = []
             for attr in dep:
-                print(primes)
-                print(attr)
                 if not (attr in primes):
                     dependant.append(attr)
             if len(dependant) == 0:
@@ -273,7 +270,6 @@ class Table:
             new_depend = (det, dependant)
             if not (new_depend in dependancies):
                 dependancies.append(new_depend)
-        print(dependancies)
         return dependancies
 
         

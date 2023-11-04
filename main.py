@@ -150,32 +150,36 @@ def normalize_to_form(start_table: table.Table, form: int) -> list[table.Table]:
         print()
         form_counter += 1
         new_table_list: list[table.Table] = []
+        print_str = ""
         for my_table in table_list:
             match form_counter:
                 case 1:
-                    print("Normalized to 1st normal form:")
+                    print_str = "Normalized to 1st normal form"
                     new_table_list += normalizer.first_normal_form(my_table)
                 case 2:
-                    print("Normalized to 2nd normal form:")
+                    print_str = "Normalized to 2nd normal form"
                     new_table_list += normalizer.second_normal_form(my_table)
                 case 3:
-                    print("Normalized to 3rd normal form:")
+                    print_str = "Normalized to 3rd normal form"
                     new_table_list += normalizer.third_normal_form(my_table)
                 case 4:
-                    print("Normalized to Boyce Codd normal form:")
+                    print_str = "Normalized to Boyce Codd normal form"
                     new_table_list += normalizer.boyce_codd_normal_form(my_table)
                 case 5:
-                    print("Normalized to 4th normal form:")
+                    print_str = "Normalized to 4th normal form"
                     new_table_list += normalizer.forth_normal_form(my_table)
                 case 6:
-                    print("Normalized to 5th normal form:")
+                    print_str = "Normalized to 5th normal form"
                     new_table_list += normalizer.fifth_normal_form(my_table)
                 case _:
                     raise RuntimeError(f"What.")
+        print(f"-----====={print_str}=====-----")
         for new_table in new_table_list:
+            print()
             new_table.print_table()
             new_table.print_primary_key()
             new_table.print_functional_dependencies()
+            new_table.print_mvds()
         table_list = new_table_list
     return table_list
 
@@ -197,20 +201,13 @@ def main():
         "Form: "
     ))
     
-    print("\nOriginal Table:")
+    print("\n-----=====Original Table=====-----")
     my_table.print_table()
     my_table.print_primary_key()
     my_table.print_functional_dependencies()
     my_table.print_mvds()
     
-    my_normalized_tables = normalize_to_form(my_table, normal_form)
-    
-    for my_table in my_normalized_tables:
-        print()
-        my_table.print_table()
-        my_table.print_primary_key()
-        my_table.print_functional_dependencies()
-        my_table.print_mvds()
+    normalize_to_form(my_table, normal_form)
     
     # ---------------=================== DEBUG ===================-------------------
 
@@ -308,7 +305,7 @@ def debug3():
 
 
 if __name__ == "__main__":
-    #main()
+    main()
     #debug()
-    debug2()
+    #debug2()
     #debug3()
