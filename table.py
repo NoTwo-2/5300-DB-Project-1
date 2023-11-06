@@ -272,6 +272,20 @@ class Table:
                 dependancies.append(new_depend)
         return dependancies
 
+    def get_non_superkey_dependencies(self) -> list[tuple[list[int], list[int]]]:
+        '''
+        This returns all dependencies in the table such that\n
+        Where there is a non-trivial functional dependency X -> Y, X is not a superkey
+        '''
+        dependancies: list[tuple[list[int], list[int]]] = []
+        # We need to check, for each functional dependency in the table, if the determinant is a superkey
+        super_keys = self.get_superkeys()
+        for det, dep in self.funct_depends:
+            det_is_superkey = det in super_keys
+            if not det_is_superkey:
+                new_depend = (det, dep)
+                dependancies.append(new_depend)
+        return dependancies
         
     def set_multivalue_funct_depends(self, *dependencies: tuple[str, tuple[str, str]]) -> None:
         '''

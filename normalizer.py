@@ -1,12 +1,5 @@
 import table
 
-def move_mvds(old_table: table.Table, new_table: table.Table) -> None:
-    '''
-    This takes in an old table and a new table
-    and transfers any multifunctional dependencies that are still valid from the old to the new
-    '''
-    pass
-
 def construct_table_from_funct_dep(old_table: table.Table, funct_depend: tuple[list[int], list[int]]) -> table.Table:
     '''
     This takes in an old table and a functional dependancy
@@ -63,6 +56,52 @@ def construct_table_from_funct_dep(old_table: table.Table, funct_depend: tuple[l
     
     return new_table
 
+def construct_table_from_cols(old_table: table.Table, table_columns: list[int]) -> table.Table:
+    '''
+    This takes in an old table and a list of columns
+    and returns a new table containing all relevant mvds and functional dependencies
+    '''
+    table_funct_depends: list[tuple[list[int], list[int]]] = []
+    table_mvds: list[tuple[int, tuple[int, int]]] = []
+    
+    # First, we find if any multivalued functional dependencies with all elements present in the new tables columns
+    # And if we do, we add them to mvds
+    for attr in table_columns:
+        mvd_dependant = old_table.get_mvd_dependants(attr)
+        if len(mvd_dependant) == 0:
+            continue
+        dep_in_col = all(attr in table_columns for attr in mvd_dependant)
+        if not dep_in_col:
+            continue
+        new_mvd = (attr, mvd_dependant)
+        table_mvds.append(new_mvd)
+
+    # Last, we need to find any transitive functional dependencies in our columns, and take them with us
+    for det, dep in old_table.funct_depends:
+        determinant_in_col = all(attr in table_columns for attr in det)
+        if determinant_in_col:
+            new_dependants: list[int] = []
+            for attr in dep:
+                if not (attr in table_columns):
+                    continue
+                new_dependants.append(attr)
+            if len(new_dependants) == 0:
+                continue
+            new_dependancy = (det, new_dependants)
+            if new_dependancy in table_funct_depends:
+                continue
+            table_funct_depends.append(new_dependancy)
+
+    # Construct the table!
+    new_table = construct_table(
+        old_table=old_table, 
+        new_col_indexes=table_columns, 
+        primary_key=[], 
+        functional_dependencies=table_funct_depends,
+        multivalue_attributes=table_mvds
+        )
+    return new_table
+
 def convert_index(index: int, old_columns: list[str], new_columns: list[str]) -> int:
     '''
     This takes in an index in the old and two columns and outputs the index in the new
@@ -79,14 +118,14 @@ def construct_table(
     multivalue_attributes: list[tuple[int, tuple[int, int]]]
     ) -> table.Table:
     '''
-    This will take in an old table and other info needed, and construct and return a new one
+    This will take in an old table and other info needed, and construct and return a new one\n
+    Note, if primary key is left emptry, a primary key will be found for the table\n
+    If no primary key is able to be found, we throw a runtime error
     '''
     # Convert old indexes to new ones and construct the table with rows, the pk, fds, and mvds
     new_col_indexes.sort()
     new_columns = [old_table.columns[i] for i in new_col_indexes]
     new_table = table.Table(new_columns)
-    new_pk = [convert_index(i, old_table.columns, new_table.columns) for i in primary_key]
-    new_table.primary_key = new_pk
     for det, dep in functional_dependencies:
         new_det = [convert_index(i, old_table.columns, new_table.columns) for i in det]
         new_dep = [convert_index(i, old_table.columns, new_table.columns) for i in dep]
@@ -95,6 +134,16 @@ def construct_table(
         new_det = convert_index(det, old_table.columns, new_table.columns)
         new_dep = tuple([convert_index(i, old_table.columns, new_table.columns) for i in dep])
         new_table.multi_funct_depends.append((new_det, new_dep))
+    
+    # Before we set the primary key, we check if we were given one, and if not, we must pick on
+    if len(primary_key) == 0:
+        candidate_keys = new_table.get_candidate_keys()
+        if len(candidate_keys) == 0:
+            raise RuntimeError("A new relation created for BCNF has no valid candidate keys!")
+        primary_key = candidate_keys[0]
+    
+    new_pk = [convert_index(i, old_table.columns, new_table.columns) for i in primary_key]
+    new_table.primary_key = new_pk
 
     # Having constructed our new table, we now need to add all the tuples back into it
     for tup in old_table.tuples:
@@ -228,7 +277,36 @@ def boyce_codd_normal_form(my_table: table.Table) -> list[table.Table]:
     These tables store an equivalent amount of data as the inputed table
     The tables returned will be in boyce codd normal forms
     '''
-    pass
+    # This is a somewhat recursive algorithm, so that the nonaddiditve join property is fulfilled
+    print("Start:")
+    my_table.print_table()
+    new_dependancies: 'list[tuple[list[int], list[int]]]' = my_table.get_non_superkey_dependencies()
+    # Stop condition
+    if len(new_dependancies) == 0:
+        return [my_table]
+    
+    # New table construction; R-A and XA
+    # We pick the first dependency X -> A in the list of new dependencies to create our new relation XA
+    new_funct_depend = new_dependancies[0]
+    xa = construct_table_from_funct_dep(my_table, new_funct_depend)
+    print("XA:")
+    xa.print_table()
+    # We subract the dependent of the new funct depend from the list of columns of the original table
+    # This will be the basis of our new relation R - A
+    new_columns = list(range(len(my_table.columns)))
+    for attr in new_funct_depend[1]:
+        new_columns.remove(attr)
+    r_minus_a = construct_table_from_cols(my_table, new_columns)
+    print("R-A:")
+    r_minus_a.print_table()
+    
+    # We must maintain the nonadditive join property condition, so we will execute the BCNF algorithm recursively
+    new_tables: list[table.Table] = []
+    new_tables.extend(boyce_codd_normal_form(xa))
+    new_tables.extend(boyce_codd_normal_form(r_minus_a))
+    
+    # Aaaand return the new tables
+    return new_tables
 
 def forth_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
