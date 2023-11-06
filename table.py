@@ -16,7 +16,7 @@ class Table:
         # These will be set in other functions
         self.primary_key: list[int] = []
         self.funct_depends: 'list[tuple[list[int], list[int]]]'= []
-        self.multi_funct_depends: 'list[tuple[int, tuple[int, int]]]' = []
+        self.multi_funct_depends: 'list[tuple[int, int]]' = []
         
     def set_primary_key(self, attributes: list[str])-> None:
         '''
@@ -287,40 +287,36 @@ class Table:
                 dependancies.append(new_depend)
         return dependancies
         
-    def set_multivalue_funct_depends(self, *dependencies: tuple[str, tuple[str, str]]) -> None:
+    def set_multivalue_funct_depends(self, *dependencies: tuple[int, int]) -> None:
         '''
         This takes in two multivalue functional dependencies in the form of tuples (a, b) where a ->-> b.\n 
         And sets self.funct_depends to these values\n
         Returns a RuntimeError if any attribute is not found or if any value other than two functional dependencies are inputted
         '''
-        if len(dependencies) != 2:
-            raise RuntimeError(f"{dependencies} does not have two tuples")
-        
         for dependency in dependencies:
             determinant = dependency[0]
             self.check_attribute_if_valid(determinant)
-            dependant1, dependant2 = dependency[1]
-            self.check_attribute_if_valid(dependant1)
-            self.check_attribute_if_valid(dependant2)
+            dependant = dependency[1]
+            self.check_attribute_if_valid(dependant)
             
             det_index = self.columns.index(determinant)
-            dep1_index = self.columns.index(dependant1)
-            dep2_index = self.columns.index(dependant2)
+            dep_index = self.columns.index(dependant)
             
-            new_dependency = (det_index, (dep1_index, dep2_index))
+            new_dependency = (det_index, dep_index)
             
             self.multi_funct_depends.append(new_dependency)
     
-    def get_mvd_dependants(self, determinant: int) -> tuple[int, int]:
+    def get_mvd_dependants(self, determinant: int) -> list[int]:
         '''
         This takes in a determinant (as a list of ints) and outputs the dependants of the mvd as a list of ints\n
         Returns empty list if no dependants are found
         '''
+        dependants = []
         for det, dep in self.multi_funct_depends:
             if determinant != det:
                 continue
-            return dep
-        return ()
+            dependants.append(dep)
+        return dependants
         
     def check_attribute_if_valid(self, attr: str) -> None:
         if not (attr in self.columns):
@@ -421,7 +417,5 @@ class Table:
             determ_str = self.get_columns([determinant])
             
             depenant = dependancy[1]
-            depend_str = self.get_columns(depenant)
-            for attr in depenant:
-                depend_str = self.get_columns([attr])
-                print(f" -  {determ_str} ->-> {depend_str}")
+            depend_str = self.get_columns([depenant])
+            print(f" -  {determ_str} ->-> {depend_str}")

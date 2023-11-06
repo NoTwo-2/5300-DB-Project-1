@@ -8,7 +8,7 @@ def construct_table_from_funct_dep(old_table: table.Table, funct_depend: tuple[l
     table_funct_depends: list[tuple[list[int], list[int]]] = []
     if len(funct_depend[1]) != 0:
         table_funct_depends.append(funct_depend)
-    table_mvds: list[tuple[int, tuple[int, int]]] = []
+    table_mvds: list[tuple[int, int]] = []
     table_columns: list[int] = []
 
     # Add attributes from the functional dependency to the new columns
@@ -23,11 +23,12 @@ def construct_table_from_funct_dep(old_table: table.Table, funct_depend: tuple[l
         mvd_dependant = old_table.get_mvd_dependants(attr)
         if len(mvd_dependant) == 0:
             continue
-        dep_in_col = all(attr in table_columns for attr in mvd_dependant)
-        if not dep_in_col:
-            continue
-        new_mvd = (attr, mvd_dependant)
-        table_mvds.append(new_mvd)
+        for dep_attr in mvd_dependant:
+            if not dep_attr in table_columns:
+                print(table_columns, mvd_dependant)
+                continue
+            new_mvd = (attr, dep_attr)
+            table_mvds.append(new_mvd)
 
     # Last, we need to find any transitive functional dependencies in our columns, and take them with us
     for det, dep in old_table.funct_depends:
@@ -70,11 +71,12 @@ def construct_table_from_cols(old_table: table.Table, table_columns: list[int]) 
         mvd_dependant = old_table.get_mvd_dependants(attr)
         if len(mvd_dependant) == 0:
             continue
-        dep_in_col = all(attr in table_columns for attr in mvd_dependant)
-        if not dep_in_col:
-            continue
-        new_mvd = (attr, mvd_dependant)
-        table_mvds.append(new_mvd)
+        for dep_attr in mvd_dependant:
+            if not dep_attr in table_columns:
+                print(table_columns, mvd_dependant)
+                continue
+            new_mvd = (attr, dep_attr)
+            table_mvds.append(new_mvd)
 
     # Last, we need to find any transitive functional dependencies in our columns, and take them with us
     for det, dep in old_table.funct_depends:
@@ -115,7 +117,7 @@ def construct_table(
     new_col_indexes: list[int],
     primary_key: list[int],
     functional_dependencies: list[tuple[list[int], list[int]]],
-    multivalue_attributes: list[tuple[int, tuple[int, int]]]
+    multivalue_attributes: list[tuple[int, int]]
     ) -> table.Table:
     '''
     This will take in an old table and other info needed, and construct and return a new one\n
@@ -132,7 +134,7 @@ def construct_table(
         new_table.funct_depends.append((new_det, new_dep))
     for det, dep in multivalue_attributes:
         new_det = convert_index(det, old_table.columns, new_table.columns)
-        new_dep = tuple([convert_index(i, old_table.columns, new_table.columns) for i in dep])
+        new_dep = convert_index(dep, old_table.columns, new_table.columns)
         new_table.multi_funct_depends.append((new_det, new_dep))
     
     # Before we set the primary key, we check if we were given one, and if not, we must pick on
@@ -311,7 +313,18 @@ def forth_normal_form(my_table: table.Table) -> list[table.Table]:
     These tables store an equivalent amount of data as the inputed table
     The tables returned will be in fourth normal forms
     '''
-    pass
+    # Even though the textbook may not say it, I will design the decomposition to be similar to BCNF decomposition
+    # IE, it will be recursive
+    # It worked very well for me in BCNF, so I see no harm in reusing that algorithm
+    # Stop conditions
+    if len(my_table.multi_funct_depends) == 0:
+        return [my_table]
+    new_mvd = my_table.multi_funct_depends[0]
+    super_keys = my_table.get_superkeys()
+    if new_mvd[0] in super_keys:
+        return [my_table]
+    
+    # We will create three new relations, two will have decomposed the MVD, and the last will be whatever is left
 
 def fifth_normal_form(my_table: table.Table) -> list[table.Table]:
     '''

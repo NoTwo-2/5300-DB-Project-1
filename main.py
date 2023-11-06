@@ -59,7 +59,7 @@ def input_mvds(my_table: table.Table) -> None:
     for col in my_table.columns:
         print(f"{counter}) {col}")
         counter += 1
-    print("Please input any valid multivalue functional dependencies, or hit enter if finished\nFormat: Determinant ->-> Dependant1, Dependant2: ")
+    print("Please input any valid multivalue functional dependencies, or hit enter if finished\nFormat: Determinant ->-> Dependant ")
     done = False
     while not done:
         entry = input(": ")
@@ -73,24 +73,18 @@ def input_mvds(my_table: table.Table) -> None:
         determinant = splentry[0]
         dependant = splentry[1]
         
-        splependant = dependant.split(",")
-        if len(splependant) != 2:
-            print("You may only have two dependants in a MVD. Please try again.")
-            continue
-        
         try:
             numerminant = int(determinant.strip())
-            numendant = [int(attr.strip()) for attr in splependant]
+            numendant = int(dependant.strip())
         except ValueError as err:
             print(f"Something was wrong with your input: {err}")
             continue
         
         try:
             my_table.columns[numerminant]
-            for i in numendant:
-                my_table.columns[i]
+            my_table.columns[numendant]
             my_table.multi_funct_depends.append((numerminant, numendant))
-            print(f"Added {my_table.columns[numerminant]} ->-> {[my_table.columns[i] for i in numendant]} to list of functional dependencies.")
+            print(f"Added {my_table.columns[numerminant]} ->-> {my_table.columns[numendant]} to list of functional dependencies.")
         except RuntimeError as err:
             print(f"One or more of your attributes entered had an issue: {err}")
             continue
@@ -105,7 +99,7 @@ def input_primary_key(my_table: table.Table) -> None:
     for key in candidate_keys:
         print(f"{counter}) {[my_table.columns[i] for i in key]}")
         counter += 1
-    print("Please input a valid primary key\nIf your key has multiple attributes, seperate them with a comma: ")
+    print("Please select a candidate key to be a primary key")
     done = False
     while not done:
         entry = input(": ")
@@ -281,8 +275,10 @@ def debug():
         (["BuildingID"], ["BuildingName"])
     )
     my_table.set_multivalue_funct_depends(
-        ("Course", ("Professor", "BuildingID")),
-        ("StudentID", ("Course", "Professor"))
+        ("Course", "Professor"),
+        ("Course", "BuildingID"),
+        ("StudentID", "Course"),
+        ("StudentID", "Professor")
     )
     
     debug_main(my_table)
