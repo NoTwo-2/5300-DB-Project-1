@@ -139,7 +139,10 @@ def construct_table(
     if len(primary_key) == 0:
         candidate_keys = new_table.get_candidate_keys()
         if len(candidate_keys) == 0:
-            raise RuntimeError("A new relation created for BCNF has no valid candidate keys!")
+            raise RuntimeError(
+                "A new table was constructed with no explicit primary key, and no valid candidate keys were found!\n"
+                "This error most likely occured when doing BCNF"
+                )
         primary_key = candidate_keys[0]
     
     new_pk = [convert_index(i, old_table.columns, new_table.columns) for i in primary_key]
@@ -278,8 +281,6 @@ def boyce_codd_normal_form(my_table: table.Table) -> list[table.Table]:
     The tables returned will be in boyce codd normal forms
     '''
     # This is a somewhat recursive algorithm, so that the nonaddiditve join property is fulfilled
-    print("Start:")
-    my_table.print_table()
     new_dependancies: 'list[tuple[list[int], list[int]]]' = my_table.get_non_superkey_dependencies()
     # Stop condition
     if len(new_dependancies) == 0:
@@ -289,16 +290,12 @@ def boyce_codd_normal_form(my_table: table.Table) -> list[table.Table]:
     # We pick the first dependency X -> A in the list of new dependencies to create our new relation XA
     new_funct_depend = new_dependancies[0]
     xa = construct_table_from_funct_dep(my_table, new_funct_depend)
-    print("XA:")
-    xa.print_table()
     # We subract the dependent of the new funct depend from the list of columns of the original table
     # This will be the basis of our new relation R - A
     new_columns = list(range(len(my_table.columns)))
     for attr in new_funct_depend[1]:
         new_columns.remove(attr)
     r_minus_a = construct_table_from_cols(my_table, new_columns)
-    print("R-A:")
-    r_minus_a.print_table()
     
     # We must maintain the nonadditive join property condition, so we will execute the BCNF algorithm recursively
     new_tables: list[table.Table] = []

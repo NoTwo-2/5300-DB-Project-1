@@ -329,8 +329,8 @@ def debug4():
 
 
 if __name__ == "__main__":
-    #main()
-    debug()
+    main()
+    #debug()
     #debug2()
     #debug3()
     #debug4()
