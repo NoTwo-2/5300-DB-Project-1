@@ -133,6 +133,26 @@ def create_table() -> table.Table:
         except RuntimeError as err:
             print(err)
             
+def find_normal_form(my_table: table.Table) -> None:
+    '''
+    This will take in a table and find and print the highest normal form it is at
+    '''
+    form = ""
+    if not normalizer.is_1nf(my_table):
+        form = "Not normalized to any level"
+    elif not normalizer.is_2nf(my_table):
+        form = "1NF"
+    elif not normalizer.is_3nf(my_table):
+        form = "2NF"
+    elif not normalizer.is_bcnf(my_table):
+        form = "3NF"
+    elif not normalizer.is_4nf(my_table):
+        form = "BCNF"
+    else:
+        form = "4NF or 5NF"
+    
+    print("Highest normal form of the input table:", form)
+            
 def normalize_to_form(start_table: table.Table, form: int) -> list[table.Table]:
     '''
     This will take in a table object and a form as an int 1 -> 1st, 4 -> bc, 6 -> 5th\n
@@ -195,6 +215,8 @@ def main():
         "Form: "
     ))
     
+    find_highest_form = input("Find the highest form of the input table? (1: Yes, 2: No): ")
+    
     print("\n-----=====Original Table=====-----")
     my_table.print_table()
     my_table.print_primary_key()
@@ -202,6 +224,10 @@ def main():
     my_table.print_mvds()
     
     normalize_to_form(my_table, normal_form)
+    
+    if find_highest_form.strip() == "1":
+        print()
+        find_normal_form(my_table)
     
     # ---------------=================== DEBUG ===================-------------------
 
@@ -336,8 +362,8 @@ def debug4():
 
 
 if __name__ == "__main__":
-    #main()
-    debug()
+    main()
+    #debug()
     #debug2()
     #debug3()
     #debug4()

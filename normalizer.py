@@ -274,6 +274,14 @@ def third_normal_form(my_table: table.Table) -> list[table.Table]:
 
     return new_tables
 
+def is_bcnf(my_table: table.Table) -> bool:
+    '''
+    This takes in a table and returns True if it is in bcnf
+    '''
+    non_superkey_dependancies = my_table.get_non_superkey_dependencies()
+    
+    return len(non_superkey_dependancies) == 0
+
 def boyce_codd_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
     Takes in a table and returns a list of tables
@@ -304,6 +312,19 @@ def boyce_codd_normal_form(my_table: table.Table) -> list[table.Table]:
     
     # Aaaand return the new tables
     return new_tables
+
+def is_4nf(my_table: table.Table) -> bool:
+    '''
+    This takes in a table and returns True if it is in 4nf
+    '''
+    if len(my_table.multi_funct_depends) == 0:
+        return True
+    new_mvd = my_table.multi_funct_depends[0]
+    super_keys = my_table.get_superkeys()
+    if [new_mvd[0]] in super_keys:
+        return True
+    
+    return False
 
 def forth_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
