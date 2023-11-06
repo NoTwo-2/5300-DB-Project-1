@@ -262,6 +262,17 @@ def debug_main(my_table: table.Table):
         bcnf.print_primary_key()
         bcnf.print_functional_dependencies()
         bcnf.print_mvds()
+    
+    fnf_tables: list[table.Table] = []
+    for bcnf in bcnf_tables:
+        fnf_tables.extend(normalizer.forth_normal_form(bcnf))
+    
+    print("\n-----=====Fourth Normal Form=====-----")
+    for fnf in fnf_tables:
+        fnf.print_table()
+        fnf.print_primary_key()
+        fnf.print_functional_dependencies()
+        fnf.print_mvds()
 
 def debug():
     csv_cols, csv_rows = csv_parser.parse_csv("example.csv")
@@ -325,8 +336,8 @@ def debug4():
 
 
 if __name__ == "__main__":
-    main()
-    #debug()
+    #main()
+    debug()
     #debug2()
     #debug3()
     #debug4()

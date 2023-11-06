@@ -25,7 +25,6 @@ def construct_table_from_funct_dep(old_table: table.Table, funct_depend: tuple[l
             continue
         for dep_attr in mvd_dependant:
             if not dep_attr in table_columns:
-                print(table_columns, mvd_dependant)
                 continue
             new_mvd = (attr, dep_attr)
             table_mvds.append(new_mvd)
@@ -73,7 +72,6 @@ def construct_table_from_cols(old_table: table.Table, table_columns: list[int]) 
             continue
         for dep_attr in mvd_dependant:
             if not dep_attr in table_columns:
-                print(table_columns, mvd_dependant)
                 continue
             new_mvd = (attr, dep_attr)
             table_mvds.append(new_mvd)
@@ -145,9 +143,9 @@ def construct_table(
                 "A new table was constructed with no explicit primary key, and no valid candidate keys were found!\n"
                 "This error most likely occured when doing BCNF"
                 )
-        primary_key = candidate_keys[0]
-    
-    new_pk = [convert_index(i, old_table.columns, new_table.columns) for i in primary_key]
+        new_pk = candidate_keys[0]
+    else:
+        new_pk = [convert_index(i, old_table.columns, new_table.columns) for i in primary_key]
     new_table.primary_key = new_pk
 
     # Having constructed our new table, we now need to add all the tuples back into it
@@ -321,10 +319,41 @@ def forth_normal_form(my_table: table.Table) -> list[table.Table]:
         return [my_table]
     new_mvd = my_table.multi_funct_depends[0]
     super_keys = my_table.get_superkeys()
-    if new_mvd[0] in super_keys:
+    if [new_mvd[0]] in super_keys:
         return [my_table]
     
-    # We will create three new relations, two will have decomposed the MVD, and the last will be whatever is left
+    # For each non trivial MVD X ->-> A in R where X is not a superkey of R
+    # We will create two new relations, one with just the determinant and the dependant of the mvd (XA)
+    # And another that contains all attributes originally in R, minus the dependant A (R-A)
+    new_funct_depend = ([new_mvd[0]], [new_mvd[1]])
+    xa = construct_table(
+        old_table=my_table, 
+        new_col_indexes=[new_mvd[0], new_mvd[1]], 
+        primary_key=[], 
+        functional_dependencies=[],
+        multivalue_attributes=[]
+        )
+    
+    new_columns = list(range(len(my_table.columns)))
+    new_columns.remove(new_mvd[1])
+    if len(new_columns) == 2:
+        r_minus_a = construct_table(
+            old_table=my_table, 
+            new_col_indexes=new_columns, 
+            primary_key=[], 
+            functional_dependencies=[],
+            multivalue_attributes=[]
+        )
+    else:
+        r_minus_a = construct_table_from_cols(my_table, new_columns)
+    
+    # Recursivley call the 4nf function
+    new_tables: list[table.Table] = []
+    new_tables.extend(forth_normal_form(xa))
+    new_tables.extend(forth_normal_form(r_minus_a))
+    
+    # Aaaand return the new tables
+    return new_tables
 
 def fifth_normal_form(my_table: table.Table) -> list[table.Table]:
     '''
