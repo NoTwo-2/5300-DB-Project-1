@@ -257,6 +257,17 @@ def debug_main(my_table: table.Table):
         tnf.print_primary_key()
         tnf.print_functional_dependencies()
         tnf.print_mvds()
+        
+    bcnf_tables: list[table.Table] = []
+    for tnf in tnf_tables:
+        bcnf_tables.extend(normalizer.boyce_codd_normal_form(tnf))
+    
+    print("\n-----=====Boyce Codd Normal Form=====-----")
+    for bcnf in bcnf_tables:
+        bcnf.print_table()
+        bcnf.print_primary_key()
+        bcnf.print_functional_dependencies()
+        bcnf.print_mvds()
 
 def debug():
     csv_cols, csv_rows = csv_parser.parse_csv("example.csv")
@@ -302,10 +313,24 @@ def debug3():
     )
     
     debug_main(my_table)
+    
+def debug4():
+    csv_cols, csv_rows = csv_parser.parse_csv("example4.csv")
+    my_table = table.Table(csv_cols, csv_rows)
+    
+    my_table.set_primary_key(["Property_id#"])
+    my_table.set_functional_dependencies(
+        (["Property_id#"], ["County_name", "Lot#", "Area"]),
+        (["County_name", "Lot#"], ["Property_id#", "Area"]),
+        (["Area"], ["County_name"])
+    )
+    
+    debug_main(my_table)
 
 
 if __name__ == "__main__":
-    main()
-    #debug()
+    #main()
+    debug()
     #debug2()
     #debug3()
+    #debug4()
